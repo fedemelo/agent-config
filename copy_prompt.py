@@ -5,6 +5,7 @@ For tools that cannot load skills, where the only way to use one is to paste it 
 """
 
 import re
+import shutil
 import subprocess
 import sys
 from collections import deque
@@ -51,6 +52,15 @@ NAMED_ONLY = {
 TITLES = {**INCLUDED, **NAMED_ONLY}
 
 OMISSION_TITLE = "REFERENCED DOCUMENTS NOT INCLUDED"
+
+# No clipboard tool is guaranteed on Linux, hence the Wayland and X11 alternatives to pbcopy.
+# xclip and xsel write the X primary selection unless told to write the clipboard.
+CLIPBOARD_COMMANDS = [
+    ["pbcopy"],
+    ["wl-copy"],
+    ["xclip", "-selection", "clipboard"],
+    ["xsel", "--clipboard", "--input"],
+]
 
 FRONTMATTER = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
 REFERENCE = re.compile(r"\[\[([a-z0-9-]+)\]\]")
@@ -131,6 +141,18 @@ def render(root):
     return "\n\n".join(blocks), included, omitted
 
 
+def copy_to_clipboard(text):
+    """Returns why the clipboard could not be written, or None once it has been."""
+    command = next((option for option in CLIPBOARD_COMMANDS if shutil.which(option[0])), None)
+    if command is None:
+        looked_for = ", ".join(option[0] for option in CLIPBOARD_COMMANDS)
+        return f"no clipboard tool on PATH, looked for {looked_for}"
+    attempt = subprocess.run(command, input=text, text=True, capture_output=True, check=False)
+    if attempt.returncode:
+        return f"{command[0]} failed: {attempt.stderr.strip() or f'exit status {attempt.returncode}'}"
+    return None
+
+
 def main(argv):
     arguments = [argument for argument in argv if argument != "--stdout"]
     if len(arguments) != 1:
@@ -142,10 +164,17 @@ def main(argv):
         print(text)
         return
 
-    subprocess.run(["pbcopy"], input=text, text=True, check=True)
-    print(f"Copied to clipboard: {', '.join(included)}")
+    failure = copy_to_clipboard(text)
+    if failure:
+        print(text)
+        notes = sys.stderr
+        print(f"Printed above rather than copied: {failure}.", file=notes)
+        print(f"Included: {', '.join(included)}", file=notes)
+    else:
+        notes = sys.stdout
+        print(f"Copied to clipboard: {', '.join(included)}", file=notes)
     if omitted:
-        print(f"Named but not included: {', '.join(omitted)}")
+        print(f"Named but not included: {', '.join(omitted)}", file=notes)
 
 
 if __name__ == "__main__":

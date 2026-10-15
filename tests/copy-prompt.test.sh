@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Tests copy_prompt.py, which renders a skill's prompt plus the standards it has to obey, and the
-# Makefile targets that copy it. Every case runs with --stdout, so the real clipboard is never
-# written to.
+# Makefile targets that copy it. Rendering cases run with --stdout and the clipboard cases run
+# against a PATH holding stubs, so the real clipboard is never written to.
 set -uo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tool="$repo_root/copy_prompt.py"
+
+ROOT="$(mktemp -d)"
+trap 'rm -rf "$ROOT"' EXIT
 
 pass=0; fail=0
 
@@ -91,6 +94,42 @@ check "an unknown skill exits non-zero" "$(render nope >/dev/null 2>&1; echo $?)
 check "the error lists the skills" "$(render nope 2>&1 >/dev/null | grep -c 'local-review')" "1"
 check "no skill argument exits non-zero" \
   "$(python3 "$tool" --stdout >/dev/null 2>&1; echo $?)" "1"
+
+echo "=== without --stdout the prompt goes to a clipboard tool ==="
+# Only the stub directory is on PATH, so the tool a case provides is the only one found and the
+# machine's own pbcopy is out of reach. python3 is called by path for the same reason.
+python3_bin="$(command -v python3)"
+mkdir -p "$ROOT/working" "$ROOT/none" "$ROOT/broken"
+printf '#!/bin/sh\n/bin/cat > "%s/clipboard"\n' "$ROOT" > "$ROOT/working/xclip"
+printf '#!/bin/sh\necho "Error: Can'"'"'t open display" >&2\nexit 1\n' > "$ROOT/broken/xclip"
+chmod +x "$ROOT/working/xclip" "$ROOT/broken/xclip"
+
+copy() { PATH="$ROOT/$1" "$python3_bin" "$tool" local-review 2>"$ROOT/stderr"; }
+reported() { cat "$ROOT/stderr"; }
+
+out="$(copy working)"; code=$?
+check "it exits zero" "$code" "0"
+check "the rendered prompt is what the tool was handed" \
+  "$(head -2 "$ROOT/clipboard" | tr '\n' '|')" '"""|LOCAL REVIEW GUIDELINES|'
+check "the prompt is not printed as well" "$(echo "$out" | grep -c 'LOCAL REVIEW GUIDELINES')" "0"
+check "it reports what it copied" "$(echo "$out" | grep -c '^Copied to clipboard: local-review,')" "1"
+
+echo "=== with no clipboard tool it prints the prompt instead of failing ==="
+out="$(copy none)"; code=$?
+check "it still exits zero" "$code" "0"
+check "the prompt is on stdout" "$(echo "$out" | grep -c '^LOCAL REVIEW GUIDELINES$')" "1"
+check "the reason names the tools it looked for" "$(reported | grep -c 'pbcopy, wl-copy, xclip, xsel')" "1"
+check "it still says what the bundle holds" "$(reported | grep -c '^Included: local-review,')" "1"
+check "the notes stay off stdout, so a pipe gets the prompt alone" \
+  "$(echo "$out" | grep -c 'Included:')" "0"
+check "no traceback" "$(reported | grep -c Traceback)" "0"
+
+echo "=== a clipboard tool that fails is reported, not raised ==="
+out="$(copy broken)"; code=$?
+check "it exits zero" "$code" "0"
+check "the prompt is on stdout" "$(echo "$out" | grep -c '^LOCAL REVIEW GUIDELINES$')" "1"
+check "the tool's own error is passed on" "$(reported | grep -c "Can't open display")" "1"
+check "no traceback" "$(reported | grep -c Traceback)" "0"
 
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
