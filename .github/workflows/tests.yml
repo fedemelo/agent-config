@@ -26,11 +26,21 @@ jobs:
         run: python3 scripts/validate_skills.py
 
   tests:
-    # macOS, not Linux: this config installs onto macOS, and the installer depends on platform
-    # behaviour a Linux runner would not exercise, from `ln -sfn` on an existing directory
-    # symlink to empty-array expansion under bash 3.2.
-    runs-on: macos-latest
+    # Both platforms, because both run this: the install is onto macOS, and the devspaces pod
+    # procedure runs the skills and the scripts they call on Linux. The installer suite stays
+    # macOS-only, since `ln -sfn` on a directory symlink and bash 3.2 are what it depends on.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            skipped: ''
+          - runner: ubuntu-latest
+            skipped: install.test.sh
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
+    env:
+      SKIPPED: ${{ matrix.skipped }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Globbed rather than listed, so a suite added later runs without editing this file.
@@ -39,6 +49,10 @@ jobs:
         run: |
           status=0
           for suite in tests/*.test.sh; do
+            if [ "$(basename "$suite")" = "$SKIPPED" ]; then
+              echo "skipped on $RUNNER_OS: $suite"
+              continue
+            fi
             echo "::group::$suite"
             "$suite" || status=1
             echo "::endgroup::"
