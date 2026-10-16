@@ -20,8 +20,7 @@ SKILLS_DIR = Path(__file__).resolve().parent / "skills"
 #
 # The two groups decide what travels with a prompt, and the test is whether the task survives the
 # reference being missing. Included documents are the ones the prompt runs on: the standards it
-# has to obey while writing its output, and a skill whose procedure is the body of the work, as
-# work-summary is inside daily-update. Named-only documents are a procedure of their own, invoked
+# has to obey while writing its output, and the rules it settles a question by. Named-only documents are a procedure of their own, invoked
 # as a separate step, so a prompt that names one still works without it: pasting it would only
 # bury the task in instructions for another one.
 INCLUDED = {
@@ -30,13 +29,11 @@ INCLUDED = {
     "plain-english": "PLAIN ENGLISH STANDARD",
     "pr-description": "PR DESCRIPTION STANDARD",
     "pr-target": "PR TARGET RULES",
-    "work-summary": "WORK SUMMARY GUIDELINES",
 }
 
 NAMED_ONLY = {
     "address-review": "ADDRESS REVIEW GUIDELINES",
     "commit": "COMMIT GUIDELINES",
-    "daily-update": "DAILY UPDATE GUIDELINES",
     "land": "LAND GUIDELINES",
     "local-review": "LOCAL REVIEW GUIDELINES",
     "open-pr": "OPEN PR GUIDELINES",
@@ -47,6 +44,7 @@ NAMED_ONLY = {
     "verify-replies": "VERIFY REPLIES GUIDELINES",
     "verify-review": "VERIFY REVIEW GUIDELINES",
     "wire-up": "WIRE UP GUIDELINES",
+    "work-summary": "WORK SUMMARY GUIDELINES",
 }
 
 TITLES = {**INCLUDED, **NAMED_ONLY}

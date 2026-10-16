@@ -1,5 +1,0 @@
-interface:
-  display_name: "Write a daily update"
-  short_description: "Turn recent pull request activity into a team update"
-policy:
-  allow_implicit_invocation: true
