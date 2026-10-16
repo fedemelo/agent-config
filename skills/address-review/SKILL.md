@@ -17,7 +17,7 @@ Pushing is allowed only when the caller explicitly asks for it; else, the work s
 
 ## Which PR to address
 
-Resolve it with [[pr-target]].
+Load the [[pr-target]] skill and resolve it by that rule.
 
 ## The feedback set
 
@@ -85,7 +85,7 @@ caller never asked you to act on.
 1. Understand it fully. Read what it actually means. If it is unclear, disambiguate by reading the whole PR, the other comments and discussions, and above all the code. If you still cannot be certain you understand it, do not guess. Stop, and put the question in your response as a blocking question that names the point's id, saying nothing else about that point.
 2. Decide whether it is a real issue that truly affects the code.
 3. If it is not real, write a very succinct reply explaining why, and return it in your response without posting it. The caller uses it to reply on the PR so other developers understand why nothing changed. Write it to the [[plain-english]] standard loaded above, phrased for the audience: a peer reply for a human reviewer, or a rebuttal for a bot finding that explains why it is irrelevant, already handled, or wrong.
-4. If it is real, fix it. Do not introduce new issues or undesired effects; beware race conditions and any change to the original logic or intent of the code. Apply the [[comment-hygiene]] standard to comments in the code you touch: add none that merely restate the code, and drop existing ones that fail it.
+4. If it is real, fix it. Do not introduce new issues or undesired effects; beware race conditions and any change to the original logic or intent of the code. Load the [[comment-hygiene]] skill and apply it to comments in the code you touch: add none that merely restate the code, and drop existing ones that fail it.
 5. Review the fix again in context. Confirm it fully addresses the issue, does not alter intended behavior, and causes no problems elsewhere. It is easy to lose the overall workflow while focused on one detail, so check that the fix broke nothing else.
 6. Look for similar issues. If the same class of problem exists elsewhere, run this same procedure on each until everything is handled.
 

@@ -14,7 +14,7 @@ Nothing here is ever posted to the PR, by you or by any agent you spawn. No comm
 
 ## Which PR
 
-Resolve it with [[pr-target]]. Pass the number to every agent from then on, so none of them resolves the target again.
+Load the [[pr-target]] skill and resolve it by that rule. Pass the number to every agent from then on, so none of them resolves the target again.
 
 ## Before the first round
 

@@ -12,7 +12,7 @@ So this skill only routes. Work out which environment you are in, read the one f
 
 ## Pick the target
 
-Work out which environment this is by the [[environment]] rule, then read the one file for it:
+Load the [[environment]] skill and work out which environment this is by its rule, then read the one file for it:
 
 | Environment | Procedure |
 |---|---|

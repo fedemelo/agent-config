@@ -24,7 +24,7 @@ Nothing in the list means nothing is waiting on you. Say so and stop; do not ope
 
 ## A space per PR
 
-One space each, and never a review in this one. What a space is depends on where you are running, and the mechanisms have nothing in common, so each one is a file of its own. Work out the environment by the [[environment]] rule, take the first row that matches, and read only that file:
+One space each, and never a review in this one. What a space is depends on where you are running, and the mechanisms have nothing in common, so each one is a file of its own. Load the [[environment]] skill and work out the environment by its rule, take the first row that matches, and read only that file:
 
 | Where you are | What to open | Procedure |
 | --- | --- | --- |

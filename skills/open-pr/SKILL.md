@@ -49,4 +49,4 @@ gh pr create --base <base> --assignee @me --title "<title>" --body "<description
 
 ## PR description
 
-Write the description by following the [[pr-description]] standard. Never add AI attribution to the PR title or body, per the [[commit]] skill.
+Load the [[pr-description]] skill and write the description by it. Never add AI attribution to the PR title or body, per the [[commit]] skill.

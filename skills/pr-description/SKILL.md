@@ -4,7 +4,7 @@ description: "The standard for PR descriptions: succinct, unformatted, at most t
 audience: others
 ---
 
-Write a normal first draft, then tighten it against the [[plain-english]] standard and every rule below.
+Write a normal first draft, then load the [[plain-english]] skill and tighten the draft against it and every rule below.
 
 Form:
 

@@ -15,7 +15,7 @@ Two things are out of scope, and both are easy to slip into:
 
 ## Which PR to audit
 
-Resolve it with [[pr-target]].
+Load the [[pr-target]] skill and resolve it by that rule.
 
 ## Gather the whole discussion
 

@@ -16,7 +16,7 @@ Two things are out of scope, and both are easy to slip into:
 
 ## Which review
 
-Resolve the PR with [[pr-target]]. Then take the user's login and their reviews on it:
+Load the [[pr-target]] skill and resolve the PR by that rule. Then take the user's login and their reviews on it:
 
 ```sh
 gh api user --template '{{.login}}'
