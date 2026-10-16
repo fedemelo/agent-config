@@ -16,6 +16,10 @@
           },
           {
             "type": "command",
+            "command": "python3 $HOME/.claude/hooks/enforce-pr-description-skill.py"
+          },
+          {
+            "type": "command",
             "command": "python3 $HOME/.claude/hooks/require-git-tools.py"
           }
         ]
