@@ -7,7 +7,7 @@ For an ephemeral, prompt-seeded devspaces workspace. Reached from the [wire-up](
 **Do not run `install.sh` from either repo, and do not run this skill's owned-machine procedure.** They are written for a host you administer and they actively break a pod:
 
 - They **symlink** skills into `~/.claude/skills/`. Claude Code's skill discovery does not follow symlinks, so a symlinked skill is silently never loaded. It appears installed and does nothing. **Copy, never symlink.**
-- claude-config's installer installs `PreToolUse` hooks and merges entries into `~/.claude/settings.json`. In a pod, team policy comes from `/etc/claude-code/managed-settings.json`, and repo-level `.claude/settings.json` files are deliberately pinned to `{}` by a background guard. Writing into that machinery is how you break a session, and one of the hooks blocks bare `git commit`, which pods need.
+- agent-config's installer installs `PreToolUse` hooks and merges entries into `~/.claude/settings.json`. In a pod, team policy comes from `/etc/claude-code/managed-settings.json`, and repo-level `.claude/settings.json` files are deliberately pinned to `{}` by a background guard. Writing into that machinery is how you break a session, and one of the hooks blocks bare `git commit`, which pods need.
 - git-tools' installer sets `core.hooksPath` **globally** and installs a `commit-msg` hook that strips `Co-Authored-By` trailers. See the conflict below; it is not a preference here.
 - Both installers prune links pointing into their repo, so a re-run after a pod rebuild deletes what it cannot see.
 
@@ -31,7 +31,7 @@ Paths below assume the standard `$HOME` and share; take the share root from the 
 ### 1. Clone the sources to scratch, read-only
 
 ```sh
-git clone --depth=1 https://github.com/fedemelo/claude-config /tmp/claude-config-src
+git clone --depth=1 https://github.com/fedemelo/agent-config /tmp/agent-config-src
 git clone --depth=1 https://github.com/fedemelo/git-tools    /tmp/git-tools-src
 ```
 
@@ -39,16 +39,16 @@ Scratch, not a permanent checkout. Delete both when finished so no one later mis
 
 Nothing in either clone is installed, and the only thing run out of one is `scripts/skills_for.py` in step 2, which reads frontmatter and prints names. That is not a new thing to trust: this procedure is itself read from the same clone, per the paragraph below.
 
-The clone also carries the current version of this procedure. If `/tmp/claude-config-src/skills/wire-up/targets/devspaces.md` differs from the copy you are reading, the installed copy is out of date: read the cloned one and follow that instead.
+The clone also carries the current version of this procedure. If `/tmp/agent-config-src/skills/wire-up/targets/devspaces.md` differs from the copy you are reading, the installed copy is out of date: read the cloned one and follow that instead.
 
 ### 2. Copy the skills
 
 ```sh
 mkdir -p /mnt/personal/claude/skills
-python3 /tmp/claude-config-src/scripts/skills_for.py devspaces /tmp/claude-config-src/skills \
+python3 /tmp/agent-config-src/scripts/skills_for.py devspaces /tmp/agent-config-src/skills \
   > /tmp/claude-skills-here
 while IFS= read -r name; do
-  cp -a "/tmp/claude-config-src/skills/$name" /mnt/personal/claude/skills/
+  cp -a "/tmp/agent-config-src/skills/$name" /mnt/personal/claude/skills/
 done < /tmp/claude-skills-here
 ```
 
@@ -56,11 +56,11 @@ Every skill this environment gets, which is every skill that does not declare it
 
 `wire-up` is one of them: it comes with its `targets/` directory, so a later refresh is one `/wire-up` and no commands typed by hand. Its `SKILL.md` only chooses a file to read. It reads the pod signals, all of which hold here, so it reads this file and never the owned-machine one, and the choosing itself runs nothing. The copy of the skill being followed right now is overwritten by this step, which changes nothing, since this session has already read it.
 
-To refresh a single skill rather than all of them, name its directory instead: `cp -a /tmp/claude-config-src/skills/commit /mnt/personal/claude/skills/`.
+To refresh a single skill rather than all of them, name its directory instead: `cp -a /tmp/agent-config-src/skills/commit /mnt/personal/claude/skills/`.
 
 The same share serves both runtimes. Claude reads `~/.claude/skills/` and Codex reads `~/.agents/skills/`, and step 4 copies the share into each. The `agents/openai.yaml` beside each `SKILL.md` is Codex's copy of the invocation policy, which Claude ignores, so nothing else is needed for Codex. The pod image gives Codex the team's `canals` skills plugin but none of these; without the copy into `~/.agents/skills/`, a Codex session in a pod has no personal skills at all.
 
-Skip `hooks/` and `settings.json.example` from claude-config. Those are harness changes, not skills; see the conflicts below.
+Skip `hooks/` and `settings.json.example` from agent-config. Those are harness changes, not skills; see the conflicts below.
 
 **Then delete whatever the list above does not name.** A copy only adds, so a skill the repo no longer has, or no longer gives this environment, stays on the share and gets copied back into both runtimes on every start. Remove those from the share, and remove the same names from `~/.claude/skills` and `~/.agents/skills`, which step 5 will not do for you:
 
@@ -152,14 +152,14 @@ Same command the pod runs at startup, so no restart is needed. It reports `using
 Check, do not assume:
 
 1. **No symlinks:** `find ~/.claude/skills ~/.agents/skills -type l` prints nothing.
-2. **Content matches:** `diff -r /tmp/claude-config-src/skills <dir>` reports no difference inside any skill from the repo, for both `~/.claude/skills` and `~/.agents/skills`. A name that appears only in one of those came from the pod image and is not yours.
+2. **Content matches:** `diff -r /tmp/agent-config-src/skills <dir>` reports no difference inside any skill from the repo, for both `~/.claude/skills` and `~/.agents/skills`. A name that appears only in one of those came from the pod image and is not yours.
 3. **Deletions took:** every name the removal loops printed is gone from `/mnt/personal/claude/skills`, `~/.claude/skills`, `~/.agents/skills`, `/mnt/personal/claude/git-tools/bin` and `~/.local/bin`.
 4. **Frontmatter matches directory:** each `SKILL.md`'s `name:` equals its directory name, or neither runtime will load it.
 5. **References resolve:** every `[[name]]` in a copied skill names a skill that was also copied. Missing ones are dangling.
 6. **The one tool resolves, and only it:** `command -v git-review-feedback` finds it, then a real read, e.g. `git review-feedback <a recent PR number>` from a repo. `--help` through the `git` subcommand form hits a man-page error on the minimized pod image, which is git, not a broken tool; use `git-review-feedback --help` with the hyphen. `command -v git-land git-todo` must find **nothing**: either one resolving means an earlier wire-up copied it and the removal loop has not cleared it.
 7. **Nothing leaked into a repo:** `git status --short` in each repo you touched is clean, and none of the skill names appear in any repo's `.claude/skills/` or `.agents/skills/`.
 
-Then `rm -rf /tmp/claude-config-src /tmp/git-tools-src`.
+Then `rm -rf /tmp/agent-config-src /tmp/git-tools-src`.
 
 ## Conflicts to raise, not resolve
 
