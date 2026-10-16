@@ -4,7 +4,7 @@ My skills and hooks for Claude Code and Codex.
 
 Some perks:
 - The skills are meant to save *humans* time (and agents tokens). They work for Claude Code and Codex.
-- This does not touch/conflict with your own setup. To install/update, on a new machine or on an older version of this repo, just tell an agent to follow for the wire-up skill (or run `-./install.sh`)
+- This does not touch/conflict with your own setup. To install/update, on a new machine or on an older version of this repo, just tell an agent to follow for the wire-up skill (or run `./install.sh`)
 - Useful stuff: 
     - Some skills call fast [git-tools](https://github.com/fedemelo/git-tools) commands instead of `gh` ones
     - The skills are symlinked so editing them in the cloned repo edits them live
