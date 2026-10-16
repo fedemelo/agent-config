@@ -8,6 +8,7 @@ wholesale. Install a hook without it and the hook dies on import.
 """
 
 import json
+import re
 import sys
 
 
@@ -46,3 +47,29 @@ def _decision(reason):
         },
         "systemMessage": reason,
     }
+
+
+def skill_invoked(skill, payload):
+    """Whether this session's transcript shows `skill` was loaded, under any plugin namespace.
+
+    The two ways a skill gets loaded leave different traces. Claude invoking it leaves a Skill
+    tool call; the user typing /<skill> leaves none, since the CLI expands the skill itself and
+    only records the command name. A transcript that cannot be read holds no evidence.
+    """
+    name = r"(?:[\w-]+:)?" + re.escape(skill)
+    invoked = re.compile(
+        r'"name"\s*:\s*"Skill".{0,200}?"skill"\s*:\s*"' + name + r'"'
+        r"|<command-name>/" + name + r"</command-name>"
+    )
+    return bool(invoked.search(_transcript_of(payload)))
+
+
+def _transcript_of(payload):
+    path = payload.get("transcript_path")
+    if not path:
+        return ""
+    try:
+        with open(path) as f:
+            return f.read()
+    except OSError:
+        return ""
