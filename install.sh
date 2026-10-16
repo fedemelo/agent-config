@@ -9,10 +9,10 @@ repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #
 # The two path signals are overridable, which is what lets the refusal below be tested without
 # root-owned directories, and leaves room for a pod image that moves them.
-share_dir="${CLAUDE_CONFIG_SHARE_DIR:-/mnt/personal}"
-managed_dir="${CLAUDE_CONFIG_MANAGED_DIR:-/etc/claude-code}"
+share_dir="${AGENT_CONFIG_SHARE_DIR:-/mnt/personal}"
+managed_dir="${AGENT_CONFIG_MANAGED_DIR:-/etc/claude-code}"
 
-environment="${CLAUDE_CONFIG_ENVIRONMENT:-}"
+environment="${AGENT_CONFIG_ENVIRONMENT:-}"
 detected=""
 if [ -z "$environment" ]; then
   if [ -d "$share_dir" ] && [ -d "$managed_dir" ] && command -v devspaces >/dev/null 2>&1; then
@@ -27,13 +27,13 @@ fi
 # symlinks skills, which the runtime silently never loads there, and it writes machine-wide config
 # a pod does not own: ~/.claude/settings.json, where the pod's own policy lives. Running it leaves a setup that looks installed and is not, so it refuses.
 #
-# Only the detected case refuses. CLAUDE_CONFIG_ENVIRONMENT is a human naming the environment, and
+# Only the detected case refuses. AGENT_CONFIG_ENVIRONMENT is a human naming the environment, and
 # overriding the guess is not the same as asking to be stopped; the tests select that way too.
 if [ "$environment" = "devspaces" ] && [ -n "$detected" ]; then
   echo "This is a devspaces pod, where this installer is the wrong tool: symlinked skills are" >&2
   echo "silently never loaded, and it would write machine-wide config the pod does not own." >&2
   echo "Run /wire-up instead (\$wire-up in Codex), which follows the pod's own procedure." >&2
-  echo "To install anyway, re-run with CLAUDE_CONFIG_ENVIRONMENT=devspaces." >&2
+  echo "To install anyway, re-run with AGENT_CONFIG_ENVIRONMENT=devspaces." >&2
   exit 1
 fi
 
