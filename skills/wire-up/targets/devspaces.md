@@ -168,7 +168,7 @@ Both of these are real disagreements between the user's conventions and pod poli
 - **Commit attribution.** The `commit` skill forbids a `Co-Authored-By` trailer, and git-tools' `commit-msg` hook strips one. The pod's managed settings (`/etc/claude-code/managed-settings.json`, key `attribution.commit`) inject exactly that trailer, and organization policy requires it. Managed settings outrank a user-scope skill. Installing the hook would also rewrite commit messages in **every** repo in the pod, since `core.hooksPath` is global.
 - **Repo-specific delivery skills.** A repo may mandate its own PR workflow — `canals` tells every agent to use `/canals:ship-it` — which overlaps `commit` and `open-pr`. Both sets are installed; which wins is the user's call, per repo.
 
-Also worth stating plainly: without git-tools, the review skills (`local-review`, `address-review`, `verify-replies`, `verify-review`) lose the `git review-feedback` read they are built on, and since no hooks are installed here the failure is a bare `git: 'review-feedback' is not a git command` rather than anything that explains itself. Those skills say to report that and stop, which is the right answer either way.
+Also worth stating plainly: without git-tools, the review skills (`local-review`, `address-review`, `discussion-audit`, `verify-review`) lose the `git review-feedback` read they are built on, and since no hooks are installed here the failure is a bare `git: 'review-feedback' is not a git command` rather than anything that explains itself. Those skills say to report that and stop, which is the right answer either way.
 
 ## Updating later
 

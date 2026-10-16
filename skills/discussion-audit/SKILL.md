@@ -1,5 +1,5 @@
 ---
-name: verify-replies
+name: discussion-audit
 description: Audits the discussion on a PR after the replies have been posted, checking every claim in them against the code and finding points that were raised but never answered. Flags what is wrong, partial, missed, imprecise, or left dangling, and changes nothing. Takes an optional PR number or URL, defaulting to the current branch's PR. Use when asked to verify, audit, or double-check the replies or the discussion on a PR.
 disallowed-tools: Edit Write NotebookEdit
 ---
