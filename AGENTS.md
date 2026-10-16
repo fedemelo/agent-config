@@ -1,4 +1,4 @@
-# claude-config
+# agent-config
 
 Implementation notes for agents working on this repo. `README.md` is for humans and covers what the repo offers and why. This file covers how it's built.
 
