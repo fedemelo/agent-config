@@ -39,7 +39,6 @@ NAMED_ONLY = {
     "open-pr": "OPEN PR GUIDELINES",
     "review-queue": "REVIEW QUEUE GUIDELINES",
     "review-rounds": "REVIEW ROUNDS GUIDELINES",
-    "second-opinion": "SECOND OPINION GUIDELINES",
     "todo": "TODO GUIDELINES",
     "verify-replies": "VERIFY REPLIES GUIDELINES",
     "verify-review": "VERIFY REVIEW GUIDELINES",
