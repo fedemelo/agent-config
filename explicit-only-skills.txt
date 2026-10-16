@@ -6,7 +6,9 @@
 # and merges a PR, `wire-up` pulls two repos and rewires the whole machine's setup, and
 # `review-rounds` spends
 # rounds of agents committing and pushing to a branch until a review approves it, and
-# `review-queue` starts a session per PR waiting on your review.
+# `review-queue` starts a session per PR waiting on your review. `say` is the odd one out: it
+# mutates nothing, but it plays audio out loud, which an unasked-for invocation would do at
+# whatever moment the model decided a response was worth reading, not when the user chose.
 #
 # A skill listed here carries no "Use when ..." clause in its description. The model never
 # sees the description of a skill it may not invoke, so the clause would name triggers for a
@@ -25,5 +27,6 @@ land
 open-pr
 review-queue
 review-rounds
+say
 todo
 wire-up

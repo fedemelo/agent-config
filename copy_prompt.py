@@ -41,6 +41,7 @@ NAMED_ONLY = {
     "open-pr": "OPEN PR GUIDELINES",
     "review-queue": "REVIEW QUEUE GUIDELINES",
     "review-rounds": "REVIEW ROUNDS GUIDELINES",
+    "say": "SAY GUIDELINES",
     "todo": "TODO GUIDELINES",
     "wire-up": "WIRE UP GUIDELINES",
     "work-summary": "WORK SUMMARY GUIDELINES",

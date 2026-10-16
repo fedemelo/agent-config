@@ -1,0 +1,5 @@
+interface:
+  display_name: "Read last response aloud"
+  short_description: "Speak the previous response out loud with macOS say"
+policy:
+  allow_implicit_invocation: false
