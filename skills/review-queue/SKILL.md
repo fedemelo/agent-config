@@ -1,6 +1,6 @@
 ---
 name: review-queue
-description: Lists the open PRs on this repo that are waiting on your review, newest first, and opens one space per PR to review it — a devspaces workspace in the "Local Review" group in a pod, a background session elsewhere — so the reviews arrive as separate spaces you switch between rather than in this one. Also names the review spaces whose PR no longer needs you, for you to delete.
+description: Lists the open PRs on this repo that are waiting on your review, newest first, and opens one space per PR to review it — a devspaces workspace in the same group as the one it runs from in a pod, a background session elsewhere — so the reviews arrive as separate spaces you switch between rather than in this one. In a pod it first deletes the review workspaces whose PR you approved or that merged; elsewhere it names the review spaces whose PR no longer needs you, for you to delete.
 disable-model-invocation: true
 ---
 
@@ -28,7 +28,7 @@ One space each, and never a review in this one. What a space is depends on where
 
 | Where you are | What to open | Procedure |
 | --- | --- | --- |
-| The `devspaces` environment | A devspaces workspace, in the `Local Review` group | `targets/devspaces.md` |
+| The `devspaces` environment | A devspaces workspace, in the group this session's workspace is in | `targets/devspaces.md` |
 | Any other environment, with the `claude` CLI on `PATH` | A background session | `targets/local-cli.md` |
 | Any other environment, without it, as in Codex or a cloud session | Nothing; print a line to paste | `targets/no-local-cli.md` |
 
@@ -64,7 +64,7 @@ A PR that is no longer in the list no longer wants your review: you reviewed it,
 
 Take every `review-<n>` space for an `<n>` absent from the list, enumerated the way the target file you read says, and hand them back for you to delete.
 
-Name them; never delete one. A review you have not read yet is not yours to throw away.
+Name them; never delete one. A review you have not read yet is not yours to throw away. The one exception is a space the target file you read says to delete, because its PR shows the review is finished. That file says when, and it does that before anything is opened.
 
 ## What to report
 
