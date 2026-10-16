@@ -51,11 +51,11 @@ check "a skill named like commit blocks" "$(verdict "git commit -m x" "$(skill_c
 echo "=== both ways of reaching the skill count ==="
 # Installed as a plugin the skill answers to <plugin>:commit, which is what the transcript records.
 check "a namespaced skill call allows" \
-  "$(verdict "git commit -m x" "$(skill_call claude-config:commit)")" "allow"
+  "$(verdict "git commit -m x" "$(skill_call fedemelo:commit)")" "allow"
 # Typing /commit leaves no Skill call, only the command name the CLI expanded.
 check "typing /commit allows" "$(verdict "git commit -m x" "$(slash_call commit)")" "allow"
 check "typing the namespaced command allows" \
-  "$(verdict "git commit -m x" "$(slash_call claude-config:commit)")" "allow"
+  "$(verdict "git commit -m x" "$(slash_call fedemelo:commit)")" "allow"
 
 echo "=== only a commit is judged ==="
 check "another git command passes" "$(verdict "git status")" "allow"
