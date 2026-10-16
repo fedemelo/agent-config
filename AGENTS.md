@@ -53,9 +53,10 @@ The `audience` frontmatter key is `others` when someone other than the user read
 ## Hooks
 
 - `enforce-commit-skill.py` blocks `git commit` until the commit skill has been invoked in the session. It reads the transcript.
+- `enforce-pr-description-skill.py` blocks `gh pr create`, and `gh pr edit` with a body, until the pr-description skill has been invoked. It reads the transcript too.
 - `require-git-tools.py` blocks `git land`, `git todo` and `git review-feedback` until the git-tools executables are installed, so a skill can't fall back to raw `gh` calls.
 
-Both are hooks because no permission rule can check session history or the filesystem.
+They are hooks because no permission rule can check session history or the filesystem.
 
 ## Settings
 
