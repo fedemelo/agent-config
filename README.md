@@ -25,7 +25,7 @@ make list           # the skills you can copy
 Skills marked \* only start when you type them (`/name` in Claude Code, `$name` in Codex), not automatically.
 
 - [wire-up](skills/wire-up/SKILL.md)\*: brings any environment's setup up to date.
-- [local-review](skills/local-review/SKILL.md): an in-session PR or code review. Never posts to the PR.
+- [local-review](skills/local-review/SKILL.md): an in-session PR or code review. Never posts to the PR. E.g. prompt:, `local-review https://github.com/org/repo/pull/1067`
 - [review-queue](skills/review-queue/SKILL.md)\*: gathers the PRs waiting on your review, assigns an separate agent to local-review each.
 - [address-review](skills/address-review/SKILL.md)\*: takes a review, checks whether comments hold, fixes the real comments and drafts in-session replies to the rest. It never posts to the PR.
 - [review-rounds](skills/review-rounds/SKILL.md)\*: up to three local-review then adress-review rounds, each by a fresh agent.
