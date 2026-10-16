@@ -5,7 +5,7 @@
   "author": {
     "name": "Federico Melo Barrero"
   },
-  "repository": "https://github.com/fedemelo/claude-config",
+  "repository": "https://github.com/fedemelo/agent-config",
   "skills": "./skills/",
   "interface": {
     "displayName": "Fedemelo skills",
