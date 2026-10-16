@@ -1,143 +1,40 @@
 # claude-config
 
-> **New machine, or after any pull:** run `/wire-up`, and Claude does all of the below for you. By hand it is `git pull && ./install.sh` in [git-tools](https://github.com/fedemelo/git-tools) first, then the same here. Editing a skill takes effect immediately through the symlinks, but adding or removing one does not.
->
-> **In an ephemeral environment, `install.sh` is the wrong tool** — symlinked skills are silently never loaded, and the installers write machine-wide config a pod does not own. `/wire-up` detects that and follows [`targets/devspaces.md`](skills/wire-up/targets/devspaces.md) instead, which copies by hand onto the persistent share and from there into both `~/.claude/skills/` and `~/.agents/skills/`, so Claude and Codex in the pod both get the skills. It installs itself there too, so a later refresh is the same `/wire-up`, or `$wire-up` in Codex.
+My skills and hooks for Claude Code and Codex.
 
-Global setup for Claude Code and Codex: opinionated skills, the instructions they follow, and the hooks that enforce them.
+Some perks:
+- The skills are meant to save *humans* time (and agents tokens). They work for Claude Code and Codex.
+- This does not touch/conflict with your own setup. To install/update, on a new machine or on an older version of this repo, just tell an agent to follow for the wire-up skill (or run `-./install.sh`)
+- Useful stuff: 
+    - Some skills call fast [git-tools](https://github.com/fedemelo/git-tools) commands instead of `gh` ones
+    - The skills are symlinked so editing them in the cloned repo edits them live
+    - Some skills can only be used with explicit invocation (i.e., no agent can decide to use them, only a human)
+    - Skills know to act differently on different environments (e.g., a local machine vs a short-lived container)
+    - Hooks block commands such as `git commit` until the `commit` skill is loaded
 
-## Why this repo
+The installed settings pre-approve no commands, so in auto mode the classifier still reviews every command.
 
-1. Zero-effort install
-2. Single source of truth
-3. Opinionated skills
-4. Scripts and guardrails
-
-How so?
-
-1. `./install.sh` wires every skill, hook, and `CLAUDE.md` into place. No copying files around or per-machine fiddling.
-2. `./install.sh` symlinks the repo files rather than copying them. Editing a skill here edits the live one the agent uses, so there is no second copy to drift or go stale. A skill is also written once for [both runtimes](#both-runtimes) rather than once each.
-3. These are not restatements of what the agent already does. They encode specific conventions that actually save humans (not AI) time. See the [skills](#skills) section.
-4. Some skills drive fast `git` subcommands (from [git-tools](https://github.com/fedemelo/git-tools)) instead of long `gh` incantations, and `PreToolUse` hooks block the raw commands until the matching skill is loaded, so the conventions can't be silently skipped.
-
-## Prerequisites
-
-- The [`gh` CLI](https://cli.github.com), authenticated with `gh auth login`. Most skills drive `gh`, and nothing here checks for it, so without it they fail at first use with a bare `gh: command not found`.
-- `python3`, which the hooks and the settings merge run on.
-- [git-tools](https://github.com/fedemelo/git-tools), or the `land`, `todo` and PR-review skills stay inert, since they call its `git-land` / `git-todo` / `git-review-feedback` executables. Install it first and follow its `~/.gitconfig` step: a fresh machine has no `user.email`, and every commit fails until that is filled in.
-
-## Install
-
+If you're working with a model without a harness, use `make <skill>` to copy a skill (and any info it depends on) to the clipboard to use it as a prompt:
 ```sh
-git clone <this-repo-url>
-cd claude-config
-./install.sh
+make local-review   # Copied to clipboard: local-review, pr-target, comment-hygiene, plain-english
+make list           # the skills you can copy
 ```
-
-It symlinks `hooks/` into `~/.claude/`, points both global-instruction slots at this repo's `CLAUDE.md` (`~/.claude/CLAUDE.md` for Claude Code, `~/.codex/AGENTS.md` for Codex), links every skill this environment gets into both `~/.claude/skills/` and `~/.agents/skills/` (see [`environment` frontmatter](#also-included)), then merges the `PreToolUse` hook entries into `~/.claude/settings.json` without disturbing your existing settings. Hook entries are matched by script, so a changed command updates in place instead of leaving the old one alongside it.
-
-Neither instruction slot is ever written over blindly, and the rule is the same for both. A file you wrote yourself is moved to `<name>.pre-claude-config` rather than overwritten. A slot that is already a **symlink to something else** belongs to whoever made it, so it is reported and skipped: an environment that provisions its own base instructions — a managed workspace pointing the slot at team policy — owns that slot, and claiming it would swap out policy you never asked to lose. `/wire-up` finishes the job on a machine you own, moving your own file aside for you; a slot owned by the environment it leaves alone.
-
-**Re-run it after every pull.** Editing a skill takes effect immediately, since the installed paths are symlinks, but a skill *added* upstream has no link until you re-run, and one renamed or removed upstream leaves a link pointing nowhere. Re-running creates the first and prunes the second, reporting whatever it changed.
-
-## Both runtimes
-
-Claude Code reads `~/.claude/skills/`; Codex reads `~/.agents/skills/`, as do Copilot and OpenCode. Both get a link to the same directory in this repo, so a skill is written once and there is still only one copy of it.
-
-What differs between the runtimes is not the skill but who may start it. Claude reads `disable-model-invocation` from the `SKILL.md` frontmatter. Codex ignores that key entirely and reads `policy.allow_implicit_invocation` from an `agents/openai.yaml` beside it, which Claude in turn ignores. So each skill states the same policy twice, once per runtime, and nothing has to be duplicated except those two lines:
-
-```
-skills/land/
-├── SKILL.md            # disable-model-invocation: true
-└── agents/openai.yaml  # policy.allow_implicit_invocation: false
-```
-
-Two files can disagree, so the [validator](#also-included) fails the build unless they say the same thing and say what `explicit-only-skills.txt` says.
-
-Most skills can be started by the agent on its own. These cannot, and you have to type the command, because each changes something outside the working tree:
-
-| Skill | Claude Code | Codex |
-|---|---|---|
-| [address-review](skills/address-review/SKILL.md) | `/address-review` | `$address-review` |
-| [land](skills/land/SKILL.md) | `/land` | `$land` |
-| [open-pr](skills/open-pr/SKILL.md) | `/open-pr` | `$open-pr` |
-| [review-queue](skills/review-queue/SKILL.md) | `/review-queue` | `$review-queue` |
-| [review-rounds](skills/review-rounds/SKILL.md) | `/review-rounds` | `$review-rounds` |
-| [todo](skills/todo/SKILL.md) | `/todo` | `$todo` |
-| [wire-up](skills/wire-up/SKILL.md) | `/wire-up` | `$wire-up` |
-
-`commit` is deliberately not among them. Its hook blocks `git commit` itself, which is stronger than blocking the skill that wraps it, and making it explicit-only would stop `open-pr` and `address-review` from following it as a step.
-
-The hooks and the `disallowed-tools` restrictions are Claude Code features with no Codex equivalent, so under Codex the read-only skills are held to their own wording rather than to the harness.
-
-## Tests
-
-```sh
-tests/install.test.sh
-tests/enforce-commit-skill.test.sh
-tests/require-git-tools.test.sh
-tests/copy-prompt.test.sh
-tests/validate-skills.test.sh
-tests/pretooluse.test.sh
-```
-
-No dependencies and no network. Every install case runs against a throwaway `HOME`, so the suite never touches your real `~/.claude`; the hook cases only feed the hook a payload on stdin, plus a throwaway transcript where the hook reads one, and read its answer; and every validator case breaks one thing in a throwaway copy of the repo, so the copy it checks is never the one you are working in.
-
-The validator itself runs on its own, and is worth running after changing how a skill is packaged rather than waiting for CI:
-
-```sh
-python3 scripts/validate_skills.py
-```
-
-## Using a skill somewhere that cannot load one
-
-Claude Code and Codex both load these skills. Other tools cannot, and the only way to use one there is to paste it as a prompt. `make <skill>` puts it on the clipboard for you:
-
-```sh
-make local-review
-# Copied to clipboard: local-review, pr-target, comment-hygiene, plain-english
-make list          # the skills you can copy
-```
-
-What lands on the clipboard is the skill's content without its frontmatter, headed by a title and wrapped in `"""`, followed by whatever it references in the same shape.
-
-A reference travels with the prompt when the task cannot be done without it, and it travels all the way down. That covers the standards it has to obey while writing its output, and the odd skill whose procedure is the body of the work rather than a step beside it, as work-summary is inside daily-update.
-
-A skill it merely names, like commit, is followed as its own step, so pasting it would bury the task in instructions for a different one. Those are listed in a closing block instead, which tells the model why the reference is there, why the text is not, and to ask you for it if the work reaches it.
 
 ## Skills
 
-Each links to its full definition. The one-liner here is why it's useful and how it differs from what Claude does by default.
+Skills marked \* only start when you type them (`/name` in Claude Code, `$name` in Codex), not automatically.
 
-- **[commit](skills/commit/SKILL.md)** — enforces one commit per file, a single terse imperative message, and zero AI attribution. Unlike Claude's default committing it won't write paragraphs or slip in a `Co-Authored-By` trailer, and a hook blocks `git commit` until it's loaded.
-- **[open-pr](skills/open-pr/SKILL.md)** — puts up a clean PR end to end: branches off the latest default branch (not whatever you're sitting on), commits via the commit skill, assigns you, and writes the description to a strict standard. More than `gh pr create`: it gets the branching, hygiene, and description right.
-- **[local-review](skills/local-review/SKILL.md)** — a staff-engineer PR review delivered in the session and never posted. Unlike the native `/review` and `/code-review`, it is strictly read-only, sorts findings into categories with a test for every boundary, ties the APPROVE / COMMENT / REQUEST CHANGES verdict to them, and can verify a PR actually fixes a given ticket. Each finding is split in two: a long *reasoning* that proves it to you, and a short *comment* you can post as written.
-- **[address-review](skills/address-review/SKILL.md)** — works through the review comments on a PR, fixes the real ones and drafts replies to the rest, without ever posting. No native equivalent: it reads the whole review surface through `git review-feedback`, so the body attached to an approval is triaged like any other point instead of being missed, it never spends a reviewer's attention on its own initiative (no comment, reply, resolution, or re-review request), and it hands everything back to you to publish. It pushes only if you ask it to.
-- **[review-rounds](skills/review-rounds/SKILL.md)** — puts a PR through up to three rounds of local-review and address-review and hands back the replies. What makes it work is what it refuses to do in one context: every review is written by a separate agent that starts empty and is never told a round came before it, since a reviewer who has just argued its own findings away approves anything. It carries the replies forward so a fresh reviewer cannot reopen a point that was already answered, pushes between rounds so each review reads the fixed code, stops after one pass if reviewers are already on the PR, and hands a question back to you instead of guessing.
-- **[review-queue](skills/review-queue/SKILL.md)** — answers "what do I have to review here?" and then gets out of the way: it lists the open PRs requesting your review, newest first, and opens one space per PR running `local-review`, so each review arrives on its own instead of stacking up in the session you asked from. A space is a devspaces workspace in the `Local Review` group when it runs in a pod, and a background session anywhere else, and there is no falling from one to the other: a path that does not work stops and says so. The three mechanisms have nothing in common, so each is a file under [`skills/review-queue/targets/`](skills/review-queue/targets) that the skill routes to by the [[environment]] rule and reads one of, rather than three branches every session reads and discards two of. Re-running it opens only what is new and names the spaces whose PR no longer needs you, for you to delete. It never reviews a PR itself, which is the point: reviews written in one context are written in the shadow of each other.
-- **[second-opinion](skills/second-opinion/SKILL.md)** — asks what you make of a comment someone left on a PR, and answers with an opinion the code backs. Refetches every time instead of trusting what it read ten minutes ago, works out which comment you mean from what landed since you last touched the PR, and takes a side on the merits rather than siding with whoever is in the room.
-- **[verify-replies](skills/verify-replies/SKILL.md)** — audits a PR discussion after you have posted your replies: checks every claim in them against the code and finds points nobody ever answered. No native equivalent, and the opposite direction from a review: it reviews the conversation rather than the diff, reads resolved threads too (resolving proves nothing), and flags without touching code, comments, or reactions.
-- **[verify-review](skills/verify-review/SKILL.md)** — checks a review you already posted: whether each comment is true of the code you reviewed, whether each fix you suggested would work, and whether the severity fits. The opposite of verify-replies, which judges the answers rather than the comments. It never does a new review or says what you missed, and it judges each comment on the commit you reviewed, so a fix the author pushed later doesn't count against you.
-- **[land](skills/land/SKILL.md)** — ships committed work with a single `git land` instead of a manual `gh pr create`/`merge` dance. Wraps the commits in a disposable, auto-merged PR so solo work lands with a paper trail and no ceremony, and can split a stack into several PRs (`--until`) or one PR per commit (`--each`).
-- **[todo](skills/todo/SKILL.md)** — files a GitHub issue with `git todo`, auto-assigned to you with the right defaults, instead of recalling `gh issue create` flags.
-- **[wire-up](skills/wire-up/SKILL.md)** — gets an environment's whole setup current in one command. It routes rather than installs: environments differ enough that one procedure would be wrong somewhere, so it detects which it is in and reads only that file under [`skills/wire-up/targets/`](skills/wire-up/targets). On a machine you own ([owned-machine.md](skills/wire-up/targets/owned-machine.md)) it finds both repos, pulls each with `--ff-only` so it never decides a merge for you, runs their own installers rather than re-doing the symlinks by hand, and checks what the installers leave to a human, such as `~/.local/bin` on `PATH`, `user.email`, `gh` auth, and every skill linked into both runtimes. In an ephemeral devspaces pod ([devspaces.md](skills/wire-up/targets/devspaces.md)) it must not run those installers at all, and copies by hand instead — onto the persistent share, plus the one startup script that loads the share into the home directory, and deleting whatever the repo no longer has so renames do not pile up. That file explains why and what breaks otherwise.
-- **[work-summary](skills/work-summary/SKILL.md)** — recaps your own PR activity in the current repo from a cutoff date to now, split into still open, merged, and closed without merging. Each PR gets a line saying what it actually does, plus review and CI state for the open ones and the stated closing reason (never a guessed one) for the closed ones.
-- **[daily-update](skills/daily-update/SKILL.md)** — turns that same PR activity into the update you post to your team. Not a recap: it regroups the PRs into the two or three initiatives they belong to, drops the chores nobody gains from reading about, and hyperlinks a single word per PR inside the sentence. The rules for what belongs in such an update are external, so they are quoted in the skill rather than paraphrased, examples included.
-- **[environment](skills/environment/SKILL.md)** — the shared rule for which kind of environment a session is in: an ephemeral `devspaces` pod, or an `owned-machine` you administer. A pod has all three of `/mnt/personal`, `/etc/claude-code/` and a `devspaces` executable; a host with none of them is your own. Referenced by every skill whose procedure forks on the answer, so they all detect it the same way and none of them asks, and when the signals disagree they all stop rather than guess. `install.sh` applies the same rule in shell.
-- **[pr-target](skills/pr-target/SKILL.md)** — the shared rule for which PR a task is about: the one you named, the branch you named, or else the branch you are on. Referenced by every skill that acts on a PR, so none of them asks you a question they can answer themselves, and the answer is the same one in all of them.
-- **[comment-hygiene](skills/comment-hygiene/SKILL.md)** — the shared rule for which comments are worth keeping (only what the code can't say itself). Used alone to strip noise, and referenced by the review skills and `CLAUDE.md`.
-- **[pr-description](skills/pr-description/SKILL.md)** — the shared standard for PR descriptions: at most two short paragraphs, no formatting, no fluff. Used by open-pr when writing one.
-- **[plain-english](skills/plain-english/SKILL.md)** — the shared standard for anything another person reads: B2-level English, technical terms allowed but metaphors and corporate fluff banned, no chains of function names, nothing that reads as AI-written. Referenced by local-review, address-review, and pr-description, so their output is postable as is instead of needing a rewrite first.
+- [wire-up](skills/wire-up/SKILL.md)\*: brings any environment's setup up to date.
+- [local-review](skills/local-review/SKILL.md): an in-session PR or code review. Never posts to the PR.
+- [review-queue](skills/review-queue/SKILL.md)\*: gathers the PRs waiting on your review, assigns an separate agent to local-review each.
+- [address-review](skills/address-review/SKILL.md)\*: takes a review, checks whether comments hold, fixes the real comments and drafts in-session replies to the rest. It never posts to the PR.
+- [review-rounds](skills/review-rounds/SKILL.md)\*: up to three local-review then adress-review rounds, each by a fresh agent.
+- [land](skills/land/SKILL.md)\*: ships your commits through a disposable PR that merges itself.
+- [open-pr](skills/open-pr/SKILL.md)\*: branches off the latest default branch, commits, assigns you and writes a strict description.
+- [todo](skills/todo/SKILL.md)\*: files a GitHub issue assigned to you.
+- [commit](skills/commit/SKILL.md): one commit per file, a terse message, no AI attribution.
+- [fact-check-my-review](skills/fact-check-my-review/SKILL.md): checks that a PR review you posted is true, its fixes work and its severity fits.
+- [discussion-audit](skills/discussion-audit/SKILL.md): checks your posted replies against the PR code and finds if you forgot to address something.
+- [work-summary](skills/work-summary/SKILL.md): recaps your PRs since a date, split into open, merged and closed.
+- Shared standards the others follow: [environment](skills/environment/SKILL.md), [pr-target](skills/pr-target/SKILL.md), [comment-hygiene](skills/comment-hygiene/SKILL.md), [pr-description](skills/pr-description/SKILL.md), [plain-english](skills/plain-english/SKILL.md).
 
-## Also included
-
-- **`CLAUDE.md`** — global rules applied to every project: how a `[[reference]]` is followed, commit discipline, self-documenting code, single responsibility, DRY. Both runtimes read this one file, Claude Code through `~/.claude/CLAUDE.md` and Codex through `~/.codex/AGENTS.md`.
-- **`hooks/`** — two `PreToolUse` hooks. One blocks `git commit` until the commit skill has been invoked this session; the other blocks `git land` / `git todo` / `git review-feedback` until the git-tools executables are installed, so a skill that names one of them cannot quietly fall back to hand-rolled `gh` calls that read less than the tool does. Both encode a condition no permission rule can express, which is why they are hooks: one reads the session's history, the other the filesystem. Each is only its own decision: reading the payload and answering the harness lives once in `_pretooluse.py`, which they import as a sibling rather than each carrying a copy.
-- **`settings.json.example`** — merged into `~/.claude/settings.json` on install, adding the hooks above without disturbing settings of your own. It grants no pre-approved commands: in auto mode the classifier reviews what the rules do not settle, and an allow rule would take those commands out of that review. It is owned-machine only, and being data rather than a skill it has no frontmatter to say so, so two other things enforce it: the installer refuses to run in a pod, and the pod procedure skips this file. Its blank `attribution.commit` would in any case lose to the pod's managed settings, which require the trailer as organization policy. The validator checks that every hook in `hooks/` is registered here, which is the one way this file can go stale: the installer verifies that a hook named here exists, but a hook added to the directory and never named here would be linked and then never run.
-- **`scripts/validate_skills.py`** — fails CI when the packaging stops matching the skills. It holds both runtimes to one invocation policy, checks a skill's frontmatter names its own directory, checks every `[[reference]]` points at a skill that exists, checks a skill read by someone other than the user still reaches the prose standard (see `audience` below), checks no skill references one that is missing wherever it runs (see `environment` below), refuses to let a skill that routes on the environment be scoped to one of them, holds a routing skill and its `targets/` directory to the same list of files, checks every hook in `hooks/` is registered in `settings.json.example`, and checks `copy_prompt.py` can title every skill, which otherwise only surfaces when `make <skill>` exits with an error. It parses YAML itself rather than pulling in PyYAML, so the repo and its tests stay dependency-free; the parser rejects duplicate keys and anything outside the small subset written here instead of guessing.
-- **`audience` frontmatter** — `others` says a person other than the user reads this skill's output, so it has to reach [[plain-english]]; `user` says the output stays in the session. Nothing expands a `[[reference]]` at runtime, so a skill that writes for someone else without naming the standard leaves the model to recall rules it was never shown, and the validator refuses that. Declared per skill rather than listed in the validator, or a skill written later goes unchecked until someone remembers to add it. Neither runtime reads the key, the same way Codex ignores `disable-model-invocation`. One hop counts: `open-pr` reaches the standard through `pr-description`, so it does not restate the reference.
-- **`environment` frontmatter** — `devspaces` or `owned-machine` says a skill belongs in one kind of environment, so the installers link it only there; the default, `any`, runs everywhere. `land` and `todo` are `owned-machine`: both act on the user's own work and neither is wanted from a pod, and with two environments that row is every answer except the pod, so it reads as "anywhere but there". The reason is context rather than tidiness: every installed skill spends its description on every session, and one that cannot run here can never repay that. Declared per skill rather than listed in the installer, for the same reason as `audience`, and neither runtime reads it. The validator enforces the one rule that makes the split safe: a skill may only `[[reference]]` one that is installed wherever it is, since nothing expands a reference at runtime and a missing one does not announce itself. Where only the *procedure* differs and the skill itself belongs everywhere, it stays `any` and routes to a `targets/` file instead, as `wire-up` and `review-queue` do. That is the common case: an audit of all of them found only `land` and `todo` worth scoping, and they are scoped by intent rather than by anything that would fail, since the rest work on repo and GitHub state, which is identical in both environments, and none writes to a home directory. A router is held to it, since a skill scoped to one environment is missing from the one it was meant to identify, with nothing left there to read its own routing table.
-- **`scripts/skills_for.py`** — prints the skills one environment gets, and is the only reader of that key. Both installers select through it: `install.sh` here, and the devspaces procedure copying onto the share in a pod. Two readers of one key eventually disagree about which skills a pod has, and the disagreement shows up as a skill that is quietly missing.
-- **`explicit-only-skills.txt`** — the eight skills you have to start yourself, listed once for [both runtimes](#both-runtimes) so the policy is reviewed in one place rather than inferred from two frontmatter keys.
-- **`.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`** — manifests that let someone else install this repo as a plugin in either runtime. They are not how it is installed here, and deliberately so: a plugin install copies the tree and pins it to a commit, so it goes stale until someone remembers to update it, which is the drift the symlinks exist to avoid. The validator keeps them truthful anyway, since metadata nothing exercises is metadata that rots.
-- **`ruff.toml`** — line length 120, `py312`, isort. CI checks formatting and lint on a pinned ruff.
