@@ -1,5 +1,0 @@
-interface:
-  display_name: "Second opinion"
-  short_description: "Say whether a comment on a pull request holds up"
-policy:
-  allow_implicit_invocation: true
