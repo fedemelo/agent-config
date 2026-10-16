@@ -7,7 +7,7 @@ For an ephemeral, prompt-seeded devspaces workspace. Reached from the [wire-up](
 **Do not run `install.sh` from either repo, and do not run this skill's owned-machine procedure.** They are written for a host you administer and they actively break a pod:
 
 - They **symlink** skills into `~/.claude/skills/`. Claude Code's skill discovery does not follow symlinks, so a symlinked skill is silently never loaded. It appears installed and does nothing. **Copy, never symlink.**
-- claude-config's installer symlinks `CLAUDE.md`, installs `PreToolUse` hooks, and merges entries into `~/.claude/settings.json`. In a pod, team policy comes from `/etc/claude-code/managed-settings.json`, and repo-level `.claude/settings.json` files are deliberately pinned to `{}` by a background guard. Writing into that machinery is how you break a session, and one of the hooks blocks bare `git commit`, which pods need.
+- claude-config's installer installs `PreToolUse` hooks and merges entries into `~/.claude/settings.json`. In a pod, team policy comes from `/etc/claude-code/managed-settings.json`, and repo-level `.claude/settings.json` files are deliberately pinned to `{}` by a background guard. Writing into that machinery is how you break a session, and one of the hooks blocks bare `git commit`, which pods need.
 - git-tools' installer sets `core.hooksPath` **globally** and installs a `commit-msg` hook that strips `Co-Authored-By` trailers. See the conflict below; it is not a preference here.
 - Both installers prune links pointing into their repo, so a re-run after a pod rebuild deletes what it cannot see.
 
@@ -60,7 +60,7 @@ To refresh a single skill rather than all of them, name its directory instead: `
 
 The same share serves both runtimes. Claude reads `~/.claude/skills/` and Codex reads `~/.agents/skills/`, and step 4 copies the share into each. The `agents/openai.yaml` beside each `SKILL.md` is Codex's copy of the invocation policy, which Claude ignores, so nothing else is needed for Codex. The pod image gives Codex the team's `canals` skills plugin but none of these; without the copy into `~/.agents/skills/`, a Codex session in a pod has no personal skills at all.
 
-Skip `CLAUDE.md`, `hooks/` and `settings.json.example` from claude-config. Those are global-instruction and harness changes, not skills; see the conflicts below.
+Skip `hooks/` and `settings.json.example` from claude-config. Those are harness changes, not skills; see the conflicts below.
 
 **Then delete whatever the list above does not name.** A copy only adds, so a skill the repo no longer has, or no longer gives this environment, stays on the share and gets copied back into both runtimes on every start. Remove those from the share, and remove the same names from `~/.claude/skills` and `~/.agents/skills`, which step 5 will not do for you:
 

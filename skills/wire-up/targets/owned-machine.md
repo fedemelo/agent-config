@@ -6,7 +6,7 @@ Two repos hold everything, and each installs itself. Your job is to find them, p
 
 ## Find the repos
 
-- **claude-config** — `dirname "$(readlink ~/.claude/CLAUDE.md)"`. If that link is missing, the repo is the one this skill was loaded from.
+- **claude-config** — `dirname "$(dirname "$(readlink ~/.claude/skills/commit)")"`. If that link is missing, the repo is the one this skill was loaded from.
 - **git-tools** — `dirname "$(dirname "$(readlink "$(command -v git-land)")")"`, else `~/git-tools`. If it is nowhere, clone `https://github.com/fedemelo/git-tools` beside claude-config: without it the `land`, `todo` and PR-review skills are inert, and a hook blocks their commands.
 
 ## Update each
@@ -21,16 +21,6 @@ git -C <repo> pull --ff-only && <repo>/install.sh
 
 If an installer exits non-zero, report its output as it stands and stop. Both fail loudly at the one thing they cannot verify silently — a `commit-msg` hook that is not stripping trailers, a `settings.json` that no longer parses or names a hook that is not installed — and working around that leaves a setup that looks installed and is not.
 
-## Claim a global-instructions slot the installer declined
-
-Global instructions live at `~/.claude/CLAUDE.md` for Claude Code and `~/.codex/AGENTS.md` for Codex, and the installer links both at this repo's `CLAUDE.md`. It refuses one case: a slot that is already a symlink to something else. It reports that as `Left <file> alone: it is a symlink to <target>`, and the runtime then reads those other instructions instead of this repo's.
-
-On a machine you own, finish the job rather than leaving it to the user. For each slot the installer left:
-
-1. Read the target. If it is this repo's `CLAUDE.md` by another path, relink the slot at the canonical path and say so; there is nothing to preserve.
-2. If it holds instructions of the user's own, move the target aside to `<name>.pre-claude-config` beside itself, relink the slot, and tell the user where their file went and what was in it. Never delete it, and never merge it into this repo's `CLAUDE.md`.
-3. If the target is owned by something else — outside `$HOME`, not writable by the user, or provisioned by an environment that manages the machine — **stop and leave it.** Name the slot, the target, and that the runtime is reading those instructions instead. This is the case the installer is protecting, and taking the slot over would swap out instructions the user never asked to lose. A slot that is recreated on every boot would also revert, so a link made here would go stale without any error.
-
 ## Check what the installers leave out
 
 Each of these fails at first use rather than at install time, so check every one of them and report them together:
@@ -39,7 +29,6 @@ Each of these fails at first use rather than at install time, so check every one
 2. `git config --global user.email` is set. A fresh machine has none and every commit fails. Point at git-tools' `gitconfig.example` and let the user fill in their name, email and signing key. Never guess any of the three.
 3. `gh auth status` succeeds. Almost every skill drives `gh`.
 4. Every skill this environment gets is linked in both `~/.claude/skills/` and `~/.agents/skills/`. That is not the same as every directory under `<claude-config>/skills/`: one whose frontmatter scopes it to another environment is left out on purpose, and the installer reports which. Take the list to check against from `python3 <claude-config>/scripts/skills_for.py owned-machine`, never from the directory, or a correct install reads as a broken one. A skill added upstream only appears once the installer has run, which is the whole reason this skill exists: editing a skill takes effect immediately through the symlinks, adding or removing one does not.
-5. Both global-instruction slots point at this repo's `CLAUDE.md`, per the section above. A slot reading someone else's instructions is the one failure here that looks like nothing is wrong.
 
 ## Report
 
