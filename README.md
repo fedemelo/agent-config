@@ -1,4 +1,4 @@
-# claude-config
+# agent-config
 
 My skills and hooks for Claude Code and Codex.
 
