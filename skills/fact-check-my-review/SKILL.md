@@ -1,5 +1,5 @@
 ---
-name: verify-review
+name: fact-check-my-review
 description: "Checks the comments in a review you posted on a PR: whether each claim is true of the code you reviewed, whether each suggested fix is right, and whether each point makes sense as written. Judges only what you said, never looks for what you missed, and changes nothing. Takes an optional PR number or URL, defaulting to the current branch's PR. Use when asked to verify, sanity check, or double-check your own review or your comments on a PR."
 audience: user
 disallowed-tools: Edit Write NotebookEdit

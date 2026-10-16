@@ -1,5 +1,5 @@
 interface:
-  display_name: "Verify review"
+  display_name: "Fact-check my review"
   short_description: "Check that the comments in your own review hold up"
 policy:
   allow_implicit_invocation: true
