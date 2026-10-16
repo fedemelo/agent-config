@@ -1,5 +1,5 @@
 {
-  "name": "fedemelo-claude-config",
+  "name": "fedemelo-agent-config",
   "interface": {
     "displayName": "Fedemelo skills"
   },

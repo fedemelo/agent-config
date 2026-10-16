@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 PLUGIN_NAME = "fedemelo"
-MARKETPLACE_NAME = "fedemelo-claude-config"
+MARKETPLACE_NAME = "fedemelo-agent-config"
 
 REFERENCE = re.compile(r"\[\[([a-z0-9-]+)\]\]")
 
