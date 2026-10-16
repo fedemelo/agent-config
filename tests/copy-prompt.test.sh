@@ -52,11 +52,11 @@ check "a standard reached twice is rendered once" \
   "$(titles address-review | grep -c 'PLAIN ENGLISH STANDARD')" "1"
 check "a cycle between standards terminates" \
   "$(titles pr-description | tr '\n' '|')" "PR DESCRIPTION STANDARD|PLAIN ENGLISH STANDARD|"
-check "a skill the prompt runs on travels too, not just standards" \
-  "$(titles daily-update | tr '\n' '|')" \
-  "DAILY UPDATE GUIDELINES|WORK SUMMARY GUIDELINES|PLAIN ENGLISH STANDARD|"
+check "a rule the prompt runs on travels too, not just standards" \
+  "$(titles review-queue | tr '\n' '|')" \
+  "REVIEW QUEUE GUIDELINES|ENVIRONMENT RULES|"
 check "nothing is left out of a bundle that includes every reference" \
-  "$(titles daily-update | grep -c 'NOT INCLUDED')" "0"
+  "$(titles review-queue | grep -c 'NOT INCLUDED')" "0"
 
 echo "=== a procedure followed as its own step is named, not pasted ==="
 check "address-review does not drag the commit chain in" \

@@ -20,8 +20,7 @@
     ],
     "defaultPrompt": [
       "Use $fedemelo:local-review to review a pull request without posting to it",
-      "Use $fedemelo:open-pr to put the current changes up as a pull request",
-      "Use $fedemelo:daily-update to write the update you post to your team"
+      "Use $fedemelo:open-pr to put the current changes up as a pull request"
     ]
   }
 }
