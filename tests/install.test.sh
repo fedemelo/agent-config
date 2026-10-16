@@ -48,7 +48,8 @@ h="$(new_home)"
 out="$(install_into "$h")"
 check "every repo skill is linked" "$(ls "$h/.claude/skills" | wc -l | tr -d ' ')" "$skill_count"
 check "settings.json created" "$(test -f "$h/.claude/settings.json" && echo yes)" "yes"
-check "CLAUDE.md points at the repo" "$(readlink "$h/.claude/CLAUDE.md")" "$repo_root/CLAUDE.md"
+check "no global instructions are written" \
+  "$(test -e "$h/.claude/CLAUDE.md" || test -e "$h/.codex/AGENTS.md" && echo present || echo absent)" "absent"
 check "nothing reported as pruned" "$(echo "$out" | grep -c 'Pruned')" "0"
 
 echo "=== the same skills are linked for Codex, from the same directory ==="
@@ -60,62 +61,33 @@ check "the Codex policy file travels with the link" \
   "$(test -f "$h/.agents/skills/commit/agents/openai.yaml" && echo yes)" "yes"
 check "both directories are named in the report" "$(echo "$out" | grep -c '.agents/skills')" "1"
 
-echo "=== a CLAUDE.md you wrote yourself is kept ==="
-h="$(new_home)"; mkdir -p "$h/.claude"
-printf '# My rules\nAlways speak in haiku.\n' > "$h/.claude/CLAUDE.md"
-out="$(install_into "$h")"
-check "its content survives in the backup" "$(grep -c haiku "$h/.claude/CLAUDE.md.pre-claude-config")" "1"
-check "CLAUDE.md becomes the repo symlink" "$(readlink "$h/.claude/CLAUDE.md")" "$repo_root/CLAUDE.md"
-check "the move is reported" "$(echo "$out" | grep -c 'Moved aside')" "1"
+# Earlier versions linked both slots at the repo's CLAUDE.md. Once a pull deletes it, the slots
+# would dangle and silently drop the rules, so the installer swaps in the file's last version.
+# Run from a throwaway repo whose history holds that deletion, since a shallow CI clone has none.
+echo "=== a slot linked at the removed CLAUDE.md becomes a copy of it ==="
+r="$(mktemp -d "$ROOT/repo.XXXXXX")"
+cp -R "$repo_root/." "$r/" 2>/dev/null; rm -rf "$r/.git"
+git -C "$r" init -q
+printf '# Global rules\nAlways speak in haiku.\n' > "$r/CLAUDE.md"
+git -C "$r" add -A; git -C "$r" -c user.name=t -c user.email=t@t commit -qm add
+git -C "$r" rm -q CLAUDE.md; git -C "$r" -c user.name=t -c user.email=t@t commit -qm remove
+h="$(new_home)"; mkdir -p "$h/.claude" "$h/.codex"
+ln -sf "$r/CLAUDE.md" "$h/.claude/CLAUDE.md"; ln -sf "$r/CLAUDE.md" "$h/.codex/AGENTS.md"
+out="$(HOME="$h" "$r/install.sh")"
+check "CLAUDE.md is a plain file now" "$(test -L "$h/.claude/CLAUDE.md" && echo link || echo file)" "file"
+check "it holds the removed rules" "$(grep -c haiku "$h/.claude/CLAUDE.md")" "1"
+check "Codex's AGENTS.md gets the same copy" "$(grep -c haiku "$h/.codex/AGENTS.md")" "1"
+check "both replacements are reported" "$(echo "$out" | grep -c 'Replaced')" "2"
+out="$(HOME="$h" "$r/install.sh")"
+check "a re-run leaves the copies alone" "$(echo "$out" | grep -c 'Replaced')" "0"
+rm -rf "$r"
 
-# A symlink is somebody else's claim on the slot, and a managed workspace pointing it at team
-# policy is the case that matters: taking it over would swap out policy nobody asked to lose.
-echo "=== a CLAUDE.md symlinked elsewhere is left alone ==="
+echo "=== a CLAUDE.md that is not this repo's link is left alone ==="
 h="$(new_home)"; mkdir -p "$h/.claude"; printf 'theirs\n' > "$h/other.md"
 ln -sf "$h/other.md" "$h/.claude/CLAUDE.md"
-out="$(install_into "$h")"
+install_into "$h" >/dev/null
 check "the slot still points where it did" "$(readlink "$h/.claude/CLAUDE.md")" "$h/other.md"
-check "leaving it is reported" "$(echo "$out" | grep -c 'Left CLAUDE.md alone')" "1"
 check "the file it pointed at is untouched" "$(cat "$h/other.md")" "theirs"
-check "no pointless backup is made" "$(ls "$h/.claude" | grep -c 'pre-claude-config')" "0"
-check "the rest of the install still ran" \
-  "$(ls "$h/.claude/skills" | wc -l | tr -d ' ')" "$skill_count"
-
-echo "=== Codex gets the same global instructions, by the same rule ==="
-h="$(new_home)"
-out="$(install_into "$h")"
-check "AGENTS.md points at the repo" "$(readlink "$h/.codex/AGENTS.md")" "$repo_root/CLAUDE.md"
-check "both runtimes read one file" \
-  "$(readlink "$h/.codex/AGENTS.md")" "$(readlink "$h/.claude/CLAUDE.md")"
-check "the Codex slot is named in the report" "$(echo "$out" | grep -c '.codex')" "1"
-
-h="$(new_home)"; mkdir -p "$h/.codex"
-printf '# My rules\nAlways speak in haiku.\n' > "$h/.codex/AGENTS.md"
-out="$(install_into "$h")"
-check "an AGENTS.md you wrote yourself survives in the backup" \
-  "$(grep -c haiku "$h/.codex/AGENTS.md.pre-claude-config")" "1"
-check "and the slot becomes the repo symlink" \
-  "$(readlink "$h/.codex/AGENTS.md")" "$repo_root/CLAUDE.md"
-
-# The devspaces case: the workspace points this slot at root-owned team policy and recreates
-# the link every boot, so claiming it would both lose policy and not survive a restart.
-h="$(new_home)"; mkdir -p "$h/.codex"; printf 'team policy\n' > "$h/managed.md"
-ln -sf "$h/managed.md" "$h/.codex/AGENTS.md"
-out="$(install_into "$h")"
-check "a managed AGENTS.md symlink is left alone" \
-  "$(readlink "$h/.codex/AGENTS.md")" "$h/managed.md"
-check "leaving it is reported" "$(echo "$out" | grep -c 'Left AGENTS.md alone')" "1"
-check "the policy it pointed at is untouched" "$(cat "$h/managed.md")" "team policy"
-check "Claude's own slot was still claimed" \
-  "$(readlink "$h/.claude/CLAUDE.md")" "$repo_root/CLAUDE.md"
-
-echo "=== re-running over this repo's own links changes nothing ==="
-h="$(new_home)"; install_into "$h" >/dev/null
-out="$(install_into "$h")"
-check "CLAUDE.md is not reported as foreign" "$(echo "$out" | grep -c 'Left CLAUDE.md alone')" "0"
-check "AGENTS.md is not reported as foreign" "$(echo "$out" | grep -c 'Left AGENTS.md alone')" "0"
-check "neither slot is backed up on a re-run" \
-  "$(ls "$h/.claude" "$h/.codex" | grep -c 'pre-claude-config')" "0"
 
 echo "=== links to skills and hooks removed upstream are pruned ==="
 h="$(new_home)"; install_into "$h" >/dev/null
@@ -190,8 +162,6 @@ out="$(HOME="$h" PATH="$fake_bin:$PATH" CLAUDE_CONFIG_SHARE_DIR="$share" \
 check "it exits non-zero" "$code" "1"
 check "it names the right tool instead" "$(echo "$out" | grep -c 'Run /wire-up instead')" "1"
 check "nothing was linked" "$(test -e "$h/.claude/skills" && echo present || echo absent)" "absent"
-check "no instruction slot was claimed" \
-  "$(test -e "$h/.claude/CLAUDE.md" && echo present || echo absent)" "absent"
 check "no settings.json was written" \
   "$(test -e "$h/.claude/settings.json" && echo present || echo absent)" "absent"
 

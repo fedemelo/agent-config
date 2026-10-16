@@ -25,8 +25,7 @@ fi
 
 # This script is the wrong tool in a pod, and it now holds the one fact needed to say so. It
 # symlinks skills, which the runtime silently never loads there, and it writes machine-wide config
-# a pod does not own: the global-instruction slots and ~/.claude/settings.json, where the pod's own
-# policy lives. Running it leaves a setup that looks installed and is not, so it refuses.
+# a pod does not own: ~/.claude/settings.json, where the pod's own policy lives. Running it leaves a setup that looks installed and is not, so it refuses.
 #
 # Only the detected case refuses. CLAUDE_CONFIG_ENVIRONMENT is a human naming the environment, and
 # overriding the guess is not the same as asking to be stopped; the tests select that way too.
@@ -45,35 +44,29 @@ skill_dirs=("$HOME/.claude/skills" "$HOME/.agents/skills")
 
 mkdir -p "$hooks_dir" "${skill_dirs[@]}"
 
-# Each runtime reads global instructions from its own path, and both get a link to this repo's
-# CLAUDE.md: Claude Code reads ~/.claude/CLAUDE.md, Codex ~/.codex/AGENTS.md.
-#
-# Same rule for both, and it never writes over something this repo does not own. A regular file
-# there holds instructions written by hand, so it is moved aside rather than replaced without a
-# trace. A symlink pointing anywhere else belongs to whoever made it: an environment that
-# provisions its own base instructions (a managed workspace pointing the slot at team policy)
-# owns that slot, and taking it over would swap out policy the user never asked to lose. Report
-# and skip, since a slot this repo declines to claim degrades nothing but its own reach.
-link_instructions() {
-  local slot="$1" label="$2"
-
-  if [ -L "$slot" ]; then
-    local current; current="$(readlink "$slot")"
-    if [ "$current" != "$repo_dir/CLAUDE.md" ]; then
-      echo "Left $label alone: it is a symlink to $current, which this repo does not own"
-      return
-    fi
-  elif [ -e "$slot" ]; then
-    mv "$slot" "$slot.pre-claude-config"
-    echo "Moved aside your existing $label to $(basename "$slot").pre-claude-config"
-  fi
-
-  mkdir -p "$(dirname "$slot")"
-  ln -sf "$repo_dir/CLAUDE.md" "$slot"
+# Earlier versions linked both global-instruction slots at a CLAUDE.md this repo no longer has.
+# The rules in it were the user's own, so a slot still linked there becomes a plain copy of the
+# file's last version instead of a dangling link that silently drops them.
+last_instructions() {
+  local removed_in
+  removed_in="$(git -C "$repo_dir" log -1 --diff-filter=D --format=%H -- CLAUDE.md 2>/dev/null)"
+  [ -n "$removed_in" ] && git -C "$repo_dir" show "$removed_in^:CLAUDE.md" 2>/dev/null
 }
 
-link_instructions "$HOME/.claude/CLAUDE.md" "CLAUDE.md"
-link_instructions "$HOME/.codex/AGENTS.md" "AGENTS.md"
+unlink_instructions() {
+  local slot="$1"
+  [ -L "$slot" ] && [ "$(readlink "$slot")" = "$repo_dir/CLAUDE.md" ] || return 0
+  rm "$slot"
+  if last_instructions > "$slot"; then
+    echo "Replaced $slot, a link to this repo's removed CLAUDE.md, with a copy of it"
+  else
+    rm -f "$slot"
+    echo "Removed $slot, a link to this repo's removed CLAUDE.md that git history no longer has"
+  fi
+}
+
+unlink_instructions "$HOME/.claude/CLAUDE.md"
+unlink_instructions "$HOME/.codex/AGENTS.md"
 
 # Links whose target no longer exists are skills and hooks renamed or removed upstream.
 # Nothing else prunes them, and a stale skill stays listed as one Claude cannot load. Only
@@ -127,7 +120,7 @@ while IFS= read -r name; do
   [ "$removed" -eq 0 ] || echo "Unlinked $name: it is scoped to another environment than $environment"
 done < <(python3 "$repo_dir/scripts/skills_for.py" "$environment" --excluded)
 
-echo "Linked hooks into ~/.claude, global instructions into ~/.claude and ~/.codex, and skills into ~/.claude/skills and ~/.agents/skills, for the $environment environment"
+echo "Linked hooks into ~/.claude and skills into ~/.claude/skills and ~/.agents/skills, for the $environment environment"
 [ "$pruned" -eq 0 ] || echo "Pruned $pruned stale link(s)"
 [ "$excluded" -eq 0 ] || echo "Left out $excluded skill(s) scoped to another environment"
 
