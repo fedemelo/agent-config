@@ -1,6 +1,6 @@
 # No space to open, so hand back the line to paste
 
-For any environment that is not a devspaces pod and has no `claude` CLI on `PATH`: Codex, or a cloud session without it. Reached from the [side-session](../SKILL.md) skill, which decides that this is the right procedure.
+For any environment that is not a devspaces pod, is not inside Herdr, and has no `claude` CLI on `PATH`: Codex outside Herdr, or a cloud session without the CLI. Reached from the [side-session](../SKILL.md) skill, which decides that this is the right procedure.
 
 `claude --bg` does not exist here, and there is no way to hand a cloud session a starting prompt. So open nothing. Hand back each starting prompt, as the caller wrote it, for the user to paste into a space of their own.
 
