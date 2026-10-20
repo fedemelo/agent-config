@@ -28,6 +28,7 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [local-review](skills/local-review/SKILL.md): an in-session PR or code review. Never posts to the PR. E.g. prompt:, `local-review https://github.com/org/repo/pull/1067`
 - [review-queue](skills/review-queue/SKILL.md)\*: gathers the PRs waiting on your review, assigns an separate agent to local-review each.
 - [address-review](skills/address-review/SKILL.md)\*: takes a review, checks whether comments hold, fixes the real comments and drafts in-session replies to the rest. It never posts to the PR.
+- [pr-from-review](skills/pr-from-review/SKILL.md)\*: turns a review comment into a draft PR stacked on the reviewed branch, built by a separate agent. Works on your PRs and on other people's.
 - [review-rounds](skills/review-rounds/SKILL.md)\*: up to three local-review then adress-review rounds, each by a fresh agent.
 - [land](skills/land/SKILL.md)\*: ships your commits through a disposable PR that merges itself.
 - [open-pr](skills/open-pr/SKILL.md)\*: branches off the latest default branch, commits, assigns you and writes a strict description.
@@ -36,5 +37,5 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [fact-check-my-review](skills/fact-check-my-review/SKILL.md): checks that a PR review you posted is true, its fixes work and its severity fits.
 - [discussion-audit](skills/discussion-audit/SKILL.md): checks your posted replies against the PR code and finds if you forgot to address something.
 - [work-summary](skills/work-summary/SKILL.md): recaps your PRs since a date, split into open, merged and closed.
-- Shared standards the others follow: [environment](skills/environment/SKILL.md), [pr-target](skills/pr-target/SKILL.md), [comment-hygiene](skills/comment-hygiene/SKILL.md), [pr-description](skills/pr-description/SKILL.md), [plain-english](skills/plain-english/SKILL.md).
+- Shared standards the others follow: [environment](skills/environment/SKILL.md), [side-session](skills/side-session/SKILL.md), [pr-target](skills/pr-target/SKILL.md), [comment-hygiene](skills/comment-hygiene/SKILL.md), [pr-description](skills/pr-description/SKILL.md), [plain-english](skills/plain-english/SKILL.md).
 
