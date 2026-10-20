@@ -1,0 +1,5 @@
+interface:
+  display_name: "PR from review"
+  short_description: "Spin a review point off into a draft PR stacked on the reviewed branch"
+policy:
+  allow_implicit_invocation: false

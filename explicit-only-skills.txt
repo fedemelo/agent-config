@@ -6,7 +6,8 @@
 # and merges a PR, `wire-up` pulls two repos and rewires the whole machine's setup, and
 # `review-rounds` spends
 # rounds of agents committing and pushing to a branch until a review approves it, and
-# `review-queue` starts a session per PR waiting on your review. `say` is the odd one out: it
+# `review-queue` starts a session per PR waiting on your review, and `pr-from-review` starts one
+# that pushes a branch and opens a draft PR. `say` is the odd one out: it
 # mutates nothing, but it plays audio out loud, which an unasked-for invocation would do at
 # whatever moment the model decided a response was worth reading, not when the user chose.
 #
@@ -17,7 +18,9 @@
 #
 # `commit` is deliberately absent. Its PreToolUse hook blocks `git commit` itself, which is
 # strictly stronger than blocking the skill that wraps it, and making it explicit-only would
-# stop open-pr and address-review from following it as a step.
+# stop open-pr and address-review from following it as a step. `side-session` is absent for the
+# second half of that reason: review-queue and pr-from-review follow it as a step, and opening a
+# space is only ever done with a name and a prompt one of them supplies.
 #
 # The validator holds this list, SKILL.md's `disable-model-invocation` and
 # agents/openai.yaml's `policy.allow_implicit_invocation` to the same answer, so a skill
@@ -25,6 +28,7 @@
 address-review
 land
 open-pr
+pr-from-review
 review-queue
 review-rounds
 say
