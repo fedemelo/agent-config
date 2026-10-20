@@ -38,7 +38,7 @@ The `environment` frontmatter key scopes a skill to `devspaces`, `owned-machine`
 
 - `scripts/skills_for.py` is the only reader of the key. `install.sh` and the devspaces procedure both select through it, so they can't disagree about which skills a pod has.
 - A skill may only `[[reference]]` one that is installed everywhere it is. Nothing expands a reference at runtime, so a missing one fails silently.
-- When only the procedure differs, the skill stays `any` and routes to a file under `targets/`, as `wire-up` and `review-queue` do. A routing skill can't be scoped, since it would be missing from the environment it's meant to identify.
+- When only the procedure differs, the skill stays `any` and routes to a file under `targets/`, as `wire-up` and `side-session` do. A routing skill can't be scoped, since it would be missing from the environment it's meant to identify.
 
 ## Invocation policy
 
