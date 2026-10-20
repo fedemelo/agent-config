@@ -1,6 +1,6 @@
 # A background session in its own worktree
 
-For any environment that is not a devspaces pod and has the `claude` CLI on `PATH`. Reached from the [side-session](../SKILL.md) skill, which decides that this is the right procedure. Everything that skill says still holds; this file only says what a space is here and how to open, list and delete one.
+For any environment that is not a devspaces pod, is not inside Herdr, and has the `claude` CLI on `PATH`. Reached from the [side-session](../SKILL.md) skill, which decides that this is the right procedure. Everything that skill says still holds; this file only says what a space is here and how to open, list and delete one.
 
 ## Open one
 
