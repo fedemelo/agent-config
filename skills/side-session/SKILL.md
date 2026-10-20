@@ -1,6 +1,6 @@
 ---
 name: side-session
-description: "The procedure for opening a separate space seeded with a starting prompt, so a task runs in its own checkout and its own context rather than in this session: a devspaces workspace in this session's group in a pod, a background session in its own worktree elsewhere, or a line to paste where neither exists. Other skills reference it so they all open spaces the same way. Use when a task has to run in a space of its own."
+description: "The procedure for opening a separate space seeded with a starting prompt, so a task runs in its own checkout and its own context rather than in this session: a devspaces workspace in this session's group in a pod, a worktree workspace running this session's agent inside Herdr, a background session in its own worktree elsewhere, or a line to paste where none of these exists. Other skills reference it so they all open spaces the same way. Use when a task has to run in a space of its own."
 ---
 
 Open a separate space, give it a name and a starting prompt, and leave it running. The skill that sent you here supplies both and decides what the space is for. This one only says what a space is where you are running, and how to open, list and delete one.
@@ -14,10 +14,11 @@ The mechanisms have nothing in common, so each one is a file of its own. Load th
 | Where you are | What to open | Procedure |
 | --- | --- | --- |
 | The `devspaces` environment | A devspaces workspace, in the group this session's workspace is in | `targets/devspaces.md` |
+| Any other environment, inside Herdr, whichever agent this session is | A worktree workspace in Herdr, running the same agent | `targets/herdr.md` |
 | Any other environment, with the `claude` CLI on `PATH` | A background session in its own worktree | `targets/local-cli.md` |
 | Any other environment, without it, as in Codex or a cloud session | Nothing; hand back a line to paste | `targets/no-local-cli.md` |
 
-The CLI is the second question, asked only once the first has settled that this is not a pod: `command -v claude`.
+The rest are asked in order, only once the first has settled that this is not a pod. Herdr: `test "${HERDR_ENV:-}" = 1`. It comes before the CLI because a Codex or Cursor session in Herdr should open spaces the user sees in Herdr's sidebar, like any other there. The CLI: `command -v claude`.
 
 **There is no fallback.** The row follows from the environment, not from how well its mechanism cooperates. If the one you landed on does not work, stop, name what you ran and what it said, and report which spaces were opened and which were not. Never drop to the row below, and never do a space's task in this session instead. A pod that opened background sessions because the workspaces were harder is a pod where the work is somewhere you will not think to look.
 
