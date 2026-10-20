@@ -54,7 +54,7 @@ check "a cycle between standards terminates" \
   "$(titles pr-description | tr '\n' '|')" "PR DESCRIPTION STANDARD|PLAIN ENGLISH STANDARD|"
 check "a rule the prompt runs on travels too, not just standards" \
   "$(titles review-queue | tr '\n' '|')" \
-  "REVIEW QUEUE GUIDELINES|ENVIRONMENT RULES|"
+  "REVIEW QUEUE GUIDELINES|SIDE SESSION RULES|ENVIRONMENT RULES|"
 check "nothing is left out of a bundle that includes every reference" \
   "$(titles review-queue | grep -c 'NOT INCLUDED')" "0"
 

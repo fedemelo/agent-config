@@ -1,0 +1,5 @@
+interface:
+  display_name: "Side session"
+  short_description: "Open a separate space seeded with a starting prompt"
+policy:
+  allow_implicit_invocation: true

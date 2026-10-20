@@ -251,9 +251,9 @@ check "and the orphan the rename left is caught too" \
 rm -rf "$d"
 
 d=$(fixture)
-printf 'x\n' > "$d/skills/review-queue/targets/cloud.md"
+printf 'x\n' > "$d/skills/side-session/targets/cloud.md"
 check "a target nothing routes to is caught" \
-  "$(reports "$d" "review-queue: targets/cloud.md exists but the skill never routes to it")" "1"
+  "$(reports "$d" "side-session: targets/cloud.md exists but the skill never routes to it")" "1"
 rm -rf "$d"
 
 # A router scoped to one environment is missing from the very environment it was meant to
@@ -270,10 +270,10 @@ check "and it fails" "$(status "$d")" "1"
 rm -rf "$d"
 
 d=$(fixture)
-sed -i.bak 's/^disable-model-invocation: true$/disable-model-invocation: true\nenvironment: owned-machine/' \
-  "$d/skills/review-queue/SKILL.md"
+sed -i.bak 's/^\(description: .*\)$/\1\nenvironment: owned-machine/' \
+  "$d/skills/side-session/SKILL.md"
 check "a router with no wrongly-named target is still caught by the reference" \
-  "$(reports "$d" "review-queue: is environment: owned-machine but references [[environment]]")" "1"
+  "$(reports "$d" "side-session: is environment: owned-machine but references [[environment]]")" "1"
 rm -rf "$d"
 
 # Scoping is only wrong for a skill that routes. One that simply belongs to an environment is fine.

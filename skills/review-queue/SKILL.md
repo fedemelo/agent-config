@@ -24,31 +24,32 @@ Nothing in the list means nothing is waiting on you. Say so and stop; do not ope
 
 ## A space per PR
 
-One space each, and never a review in this one. What a space is depends on where you are running, and the mechanisms have nothing in common, so each one is a file of its own. Load the [[environment]] skill and work out the environment by its rule, take the first row that matches, and read only that file:
+One space each, and never a review in this one. Load the [[side-session]] skill and open, list and delete spaces by it. Before opening anything, clear out finished reviews as the next section says, so the skip check below never sees a space that is about to go.
 
-| Where you are | What to open | Procedure |
-| --- | --- | --- |
-| The `devspaces` environment | A devspaces workspace, in the group this session's workspace is in | `targets/devspaces.md` |
-| Any other environment, with the `claude` CLI on `PATH` | A background session | `targets/local-cli.md` |
-| Any other environment, without it, as in Codex or a cloud session | Nothing; print a line to paste | `targets/no-local-cli.md` |
-
-The CLI is the second question, asked only once the first has settled that this is not a pod: `command -v claude`.
-
-**There is no fallback.** The row follows from the environment, not from how well its mechanism cooperates. If the one you landed on does not work, stop, name what you ran and what it said, and report which PRs got a space and which did not. Never drop to the row below, and never review a PR here instead. A pod that opened background sessions because the workspaces were harder is a pod where the reviews are somewhere you will not think to look.
-
-Nothing outside the chosen file applies. Read it in full before acting on any part of it.
-
-Whichever row you land on, these hold:
-
-- **Name it `review-<n>`**, for PR number `<n>`. Keep the shape exactly: it is what you see on the tab, and what the skip and cleanup steps below read back.
-- **Skip any PR that already has a `review-<n>` space**, so running this again opens only what is new. A PR skipped this way still gets a line in the report.
+- **Name it `review-<n>`**, for PR number `<n>`. Keep the shape exactly: it is what you see on the tab, and what the skip and cleanup steps read back.
+- **Seed it with `/local-review <url>`** and nothing else, so the review is running when you arrive. Never `/review-loop`, which addresses and pushes; the review is yours to act on.
 - **The target is the PR's `url`, not its number**, since a pasted or attached space cannot be assumed to sit in this repo.
-- **`/local-review` and nothing else.** Never `/review-loop`, which addresses and pushes; the review is yours to act on.
-- **Never attach to a space you opened, read its output, or wait on it.** Switch to it yourself when you want the review.
+- **Skip any PR that already has a `review-<n>` space**, so running this again opens only what is new. A second space would be a duplicate, and the one already there may hold a review you haven't read. A PR skipped this way still gets a line in the report.
 
-### Reporting back
+## Spaces you are done with
 
-This is the report format wherever spaces were opened. The file that opens none keeps its own, and says so. No table: one block per PR, in the same newest-first order as the list, and nothing else surrounding it. For each PR:
+A PR that is no longer in the list no longer wants your review: you reviewed it, it closed, or it went back to draft. Its space is now clutter. Take every `review-<n>` space for an `<n>` absent from the list.
+
+Where side-session landed on devspaces workspaces, the PR itself shows whether the review is finished, so delete those whose review is. Check every one of those PRs in a single command, one `gh pr view` per PR separated by `;`, with your login from `gh api user --template '{{.login}}'` written into each:
+
+```sh
+gh pr view <n> --json number,state,reviews --template '#{{.number}} {{.state}} {{$mine := "none"}}{{range .reviews}}{{if and (eq .author.login "<login>") (or (eq .state "APPROVED") (eq .state "CHANGES_REQUESTED"))}}{{$mine = .state}}{{end}}{{end}}mine={{$mine}}{{"\n"}}'
+```
+
+`mine` is your latest approval or change request, so an approval you later took back with a change request doesn't count. A comment carries no verdict and leaves it unchanged.
+
+Delete the workspace when the state is `MERGED`, or when `mine` is `APPROVED`. Both mean the review is done. If a PR you approved is in the list again because someone asked you for another review, it gets a new workspace, and that review reads the current code.
+
+Every other space, and every space wherever side-session landed on anything else, you name and never delete. A review you have not read yet is not yours to throw away.
+
+## What to report
+
+No table: one block per PR, in the same newest-first order as the list, and nothing else surrounding it. For each PR:
 
 ```
 #<n>: <title> (<created>)
@@ -56,18 +57,10 @@ This is the report format wherever spaces were opened. The file that opens none 
     <url>
 ```
 
-The target file you read says what goes in "how to reach it". A PR skipped because a `review-<n>` space already existed still gets a line, pointing at that space.
+"How to reach it" is what side-session's target file says. A PR skipped because a `review-<n>` space already existed still gets a block, pointing at that space.
 
-## Spaces you are done with
+Below the blocks, list the workspaces you deleted, one line each with the PR number and the reason (merged, or approved by you), and then the spaces you named for the user to delete.
 
-A PR that is no longer in the list no longer wants your review: you reviewed it, it closed, or it went back to draft. Its space is now clutter.
+Where side-session opened nothing, report the list as the command printed it, then the `/local-review` lines to paste, and say that the cleanup does not apply.
 
-Take every `review-<n>` space for an `<n>` absent from the list, enumerated the way the target file you read says, and hand them back for you to delete.
-
-Name them; never delete one. A review you have not read yet is not yours to throw away. The one exception is a space the target file you read says to delete, because its PR shows the review is finished. That file says when, and it does that before anything is opened.
-
-## What to report
-
-Where you opened spaces, use the block format under "Reporting back" above, for the list and the spaces you opened, plus the spaces to delete from the section above. Where the target file keeps its own report, follow that file. Nothing about any PR's contents, either way: you have not read one.
-
-If you cannot read files here (this skill was pasted as a prompt rather than loaded), say so and ask the user for the target file, naming the one you need. Do not reconstruct the procedure from memory.
+Nothing about any PR's contents, either way: you have not read one.

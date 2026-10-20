@@ -26,6 +26,7 @@ SKILLS_DIR = Path(__file__).resolve().parent / "skills"
 INCLUDED = {
     "comment-hygiene": "COMMENT HYGIENE STANDARD",
     "environment": "ENVIRONMENT RULES",
+    "side-session": "SIDE SESSION RULES",
     "plain-english": "PLAIN ENGLISH STANDARD",
     "pr-description": "PR DESCRIPTION STANDARD",
     "pr-target": "PR TARGET RULES",
