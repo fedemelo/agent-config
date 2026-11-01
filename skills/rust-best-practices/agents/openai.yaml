@@ -1,0 +1,5 @@
+interface:
+  display_name: "Write idiomatic Rust"
+  short_description: "Write and refactor Rust to idiomatic best practices"
+policy:
+  allow_implicit_invocation: true

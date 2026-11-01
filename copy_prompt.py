@@ -30,6 +30,7 @@ INCLUDED = {
     "plain-english": "PLAIN ENGLISH STANDARD",
     "pr-description": "PR DESCRIPTION STANDARD",
     "pr-target": "PR TARGET RULES",
+    "rust-best-practices": "RUST BEST PRACTICES",
 }
 
 NAMED_ONLY = {
