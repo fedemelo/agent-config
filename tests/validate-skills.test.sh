@@ -364,5 +364,30 @@ mkdir -p "$d/commands" && printf 'x\n' > "$d/commands/ship.md"
 check "a commands/ directory is caught" "$(reports "$d" "commands/ is reserved")" "1"
 rm -rf "$d"
 
+echo "=== skills stay inside the Agent Skills spec limits ==="
+d=$(fixture)
+long_description="$(printf 'x%.0s' $(seq 1025))"
+sed -i.bak "s|^description: .*|description: $long_description|" "$d/skills/work-summary/SKILL.md"
+check "a description over 1024 characters is caught" \
+  "$(reports "$d" "work-summary: description is 1025 characters")" "1"
+rm -rf "$d"
+
+d=$(fixture)
+seq 501 >> "$d/skills/work-summary/SKILL.md"
+check "a body over 500 lines is caught" "$(reports "$d" "work-summary: SKILL.md body is")" "1"
+rm -rf "$d"
+
+d=$(fixture)
+scoped_skill "$d" "double--hyphen" any
+check "a name with a doubled hyphen is caught" \
+  "$(reports "$d" "double--hyphen: name must be lowercase letters")" "1"
+rm -rf "$d"
+
+d=$(fixture)
+long_name="$(printf 'a%.0s' $(seq 65))"
+scoped_skill "$d" "$long_name" any
+check "a name over 64 characters is caught" "$(reports "$d" "$long_name: name is 65 characters")" "1"
+rm -rf "$d"
+
 printf '\n%s passed, %s failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
