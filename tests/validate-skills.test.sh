@@ -111,6 +111,23 @@ printf 'interface:\n    display_name: "x"\n' > "$d/skills/commit/agents/openai.y
 check "an unexpected indent is caught" "$(reports "$d" "indented 4, expected 0 or 2")" "1"
 rm -rf "$d"
 
+echo "=== a folded >- value is read, and every other block style is still refused ==="
+folded_value() {
+  python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from validate_skills import parse_simple_yaml; print(parse_simple_yaml(sys.argv[2])["description"])' \
+    "$repo_root/scripts" "$1" 2>&1 | tail -1
+}
+check "folded lines are joined by single spaces" \
+  "$(folded_value $'description: >-\n  Does one thing\n  and then another.\nname: x\n')" "Does one thing and then another."
+check "a blank line inside a folded value is refused" \
+  "$(folded_value $'description: >-\n  one\n\n  two\n' | grep -c 'blank lines inside')" "1"
+check "a folded value with no text under it is refused" \
+  "$(folded_value $'description: >-\nname: x\n' | grep -c 'has no indented text')" "1"
+
+d=$(fixture)
+printf 'interface:\n  display_name: >\n    x\n' > "$d/skills/commit/agents/openai.yaml"
+check "a plain > block is still refused" "$(reports "$d" "unsupported YAML value starting with '>'")" "1"
+rm -rf "$d"
+
 echo "=== a skill's frontmatter must describe that skill ==="
 d=$(fixture)
 sed -i.bak 's/^name: commit$/name: committing/' "$d/skills/commit/SKILL.md"
