@@ -1,0 +1,5 @@
+interface:
+  display_name: "Review Rust code"
+  short_description: "Review Rust code and report prioritized, rule-cited fixes"
+policy:
+  allow_implicit_invocation: true
