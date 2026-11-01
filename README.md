@@ -37,5 +37,6 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [fact-check-my-review](skills/fact-check-my-review/SKILL.md): checks that a PR review you posted is true, its fixes work and its severity fits.
 - [discussion-audit](skills/discussion-audit/SKILL.md): checks your posted replies against the PR code and finds if you forgot to address something.
 - [work-summary](skills/work-summary/SKILL.md): recaps your PRs since a date, split into open, merged and closed.
+- [rust-best-practices](skills/rust-best-practices/SKILL.md), [rust-review](skills/rust-review/SKILL.md), [rust-port](skills/rust-port/SKILL.md): write, review and port Rust. Taken from [BeautifulRust](https://github.com/morganlinton/BeautifulRust) by Morgan Linton under the MIT license (see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)) and changed since.
 - Shared standards the others follow: [environment](skills/environment/SKILL.md), [side-session](skills/side-session/SKILL.md), [pr-target](skills/pr-target/SKILL.md), [comment-hygiene](skills/comment-hygiene/SKILL.md), [pr-description](skills/pr-description/SKILL.md), [plain-english](skills/plain-english/SKILL.md).
 
