@@ -49,6 +49,11 @@ TARGET_REFERENCE = re.compile(r"`targets/([a-z0-9-]+\.md)`")
 # reaching for a real YAML feature fails loudly instead of being read as something else.
 UNSUPPORTED_VALUES = "[{|>&*!"
 
+# The one block scalar the parser reads: folded with the final newline stripped, the form
+# imported skills use for long descriptions. Every other block style still starts with a
+# character above and is refused.
+FOLDED = ">-"
+
 
 class YamlError(Exception):
     pass
@@ -64,6 +69,32 @@ def scalar(value, number):
     return value
 
 
+def folded(lines, start, key_indent):
+    """Read a `>-` block from lines[start:], returning its folded text and the index after it.
+
+    Lines indented past the key belong to the block and are joined by single spaces. A blank
+    line inside the block would fold to a newline, which no value here needs, so it is refused.
+    """
+    end = start
+    while end < len(lines) and (not lines[end].strip() or indent_of(lines[end]) > key_indent):
+        end += 1
+    block = lines[start:end]
+    while block and not block[-1].strip():
+        block.pop()
+    if not block:
+        raise YamlError(f"line {start}: {FOLDED} has no indented text under it")
+    for offset, line in enumerate(block):
+        if not line.strip():
+            raise YamlError(f"line {start + offset + 1}: blank lines inside a {FOLDED} value are not supported")
+        if indent_of(line) != indent_of(block[0]):
+            raise YamlError(f"line {start + offset + 1}: lines of a {FOLDED} value must share one indent")
+    return " ".join(line.strip() for line in block), end
+
+
+def indent_of(line):
+    return len(line) - len(line.lstrip())
+
+
 def parse_simple_yaml(text):
     """Parse the flat or one-level-nested mapping of scalars our YAML is limited to.
 
@@ -72,12 +103,16 @@ def parse_simple_yaml(text):
     """
     root = {}
     section = None
-    for number, raw in enumerate(text.splitlines(), start=1):
-        line = raw.rstrip()
+    lines = [raw.rstrip() for raw in text.splitlines()]
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        index += 1
+        number = index
         if not line.strip() or line.lstrip().startswith("#"):
             continue
 
-        indent = len(line) - len(line.lstrip())
+        indent = indent_of(line)
         if indent not in (0, 2):
             raise YamlError(f"line {number}: indented {indent}, expected 0 or 2")
         if ":" not in line:
@@ -100,7 +135,10 @@ def parse_simple_yaml(text):
             section = target[key] = {}
             continue
 
-        target[key] = scalar(value, number)
+        if value == FOLDED:
+            target[key], index = folded(lines, index, indent)
+        else:
+            target[key] = scalar(value, number)
         if indent == 0:
             section = None
     return root
