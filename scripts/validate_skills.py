@@ -14,6 +14,15 @@ MARKETPLACE_NAME = "fedemelo-agent-config"
 
 REFERENCE = re.compile(r"\[\[([a-z0-9-]+)\]\]")
 
+# Limits from the Agent Skills specification (agentskills.io/specification), which Copilot, Cursor
+# and Gemini read the skills against as well as Claude and Codex. The body limit is guidance there
+# rather than a rule, but it is held as one here: longer material belongs in a file the skill
+# points at, and a warning in CI is read by nobody.
+SKILL_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+MAX_NAME_LENGTH = 64
+MAX_DESCRIPTION_LENGTH = 1024
+MAX_BODY_LINES = 500
+
 PROSE_STANDARD = "plain-english"
 
 # `audience: others` in the frontmatter declares that someone other than the user reads this
@@ -144,13 +153,19 @@ def parse_simple_yaml(text):
     return root
 
 
-def parse_frontmatter(text):
+def split_frontmatter(text):
     if not text.startswith("---\n"):
         raise YamlError("must open with YAML frontmatter")
     end = text.find("\n---", 4)
     if end < 0:
         raise YamlError("frontmatter is never closed")
-    return parse_simple_yaml(text[4:end])
+    body_start = text.find("\n", end + 1)
+    body = "" if body_start < 0 else text[body_start + 1 :]
+    return parse_simple_yaml(text[4:end]), body
+
+
+def parse_frontmatter(text):
+    return split_frontmatter(text)[0]
 
 
 def reject_duplicate_keys(pairs):
@@ -338,7 +353,7 @@ def check_policy(path, name, should_be_explicit, frontmatter, errors):
 def check_skill(path, name, skills, explicit, renderable, audiences, environments, errors):
     text = (path / "SKILL.md").read_text()
     try:
-        frontmatter = parse_frontmatter(text)
+        frontmatter, body = split_frontmatter(text)
     except YamlError as error:
         errors.append(f"{name}: SKILL.md {error}")
         return
@@ -346,9 +361,7 @@ def check_skill(path, name, skills, explicit, renderable, audiences, environment
     if frontmatter.get("name") != name:
         errors.append(f"{name}: frontmatter name must match the directory")
 
-    description = frontmatter.get("description")
-    if not isinstance(description, str) or not description.strip():
-        errors.append(f"{name}: frontmatter needs a non-empty description")
+    check_spec_limits(name, frontmatter.get("description"), body, errors)
 
     for reference in dict.fromkeys(REFERENCE.findall(text)):
         if reference not in skills:
@@ -378,6 +391,24 @@ def check_skill(path, name, skills, explicit, renderable, audiences, environment
     check_targets(path, name, text, errors)
     check_router_scope(path, name, environments[name], text, errors)
     check_policy(path, name, name in explicit, frontmatter, errors)
+
+
+def check_spec_limits(name, description, body, errors):
+    if len(name) > MAX_NAME_LENGTH:
+        errors.append(f"{name}: name is {len(name)} characters, the spec allows {MAX_NAME_LENGTH}")
+    if not SKILL_NAME.match(name):
+        errors.append(f"{name}: name must be lowercase letters, digits and single hyphens between them")
+
+    if not isinstance(description, str) or not description.strip():
+        errors.append(f"{name}: frontmatter needs a non-empty description")
+    elif len(description) > MAX_DESCRIPTION_LENGTH:
+        errors.append(f"{name}: description is {len(description)} characters, the spec allows {MAX_DESCRIPTION_LENGTH}")
+
+    body_lines = len(body.splitlines())
+    if body_lines > MAX_BODY_LINES:
+        errors.append(
+            f"{name}: SKILL.md body is {body_lines} lines, over {MAX_BODY_LINES}; move detail into a file it points at"
+        )
 
 
 def check_targets(path, name, text, errors):
