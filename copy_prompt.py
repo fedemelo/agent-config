@@ -44,6 +44,7 @@ NAMED_ONLY = {
     "pr-from-review": "PR FROM REVIEW GUIDELINES",
     "review-queue": "REVIEW QUEUE GUIDELINES",
     "review-rounds": "REVIEW ROUNDS GUIDELINES",
+    "rust-port": "RUST PORT GUIDELINES",
     "say": "SAY GUIDELINES",
     "todo": "TODO GUIDELINES",
     "wire-up": "WIRE UP GUIDELINES",

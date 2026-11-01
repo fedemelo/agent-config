@@ -1,0 +1,5 @@
+interface:
+  display_name: "Port code to Rust"
+  short_description: "Port code from another language to idiomatic Rust"
+policy:
+  allow_implicit_invocation: true
