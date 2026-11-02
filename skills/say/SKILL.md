@@ -10,7 +10,7 @@ Take the text of your own last response in this conversation, the one you sent r
 
 Pick the voice by the language the response is written in:
 
-- Spanish: `-v Paulina`. It is the Mexican Spanish voice, 
+- Spanish: `-v Paulina`.
 - English: `-v Samantha`.
 - A response that mixes both: use the voice of the language most of the prose is in. Leave English technical terms inside Spanish prose (for example "Inversion Graph", "stack") as they are, and read them with Paulina.
 
