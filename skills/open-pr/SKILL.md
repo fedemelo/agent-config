@@ -1,6 +1,6 @@
 ---
 name: open-pr
-description: "Puts up a clean PR for the current working changes: cuts a fresh branch off the latest default branch, commits only valid code changes, pushes, and opens a PR assigned to the user with a terse description."
+description: "Puts up a clean PR for the current working changes: cuts a fresh branch off the latest default branch, commits only valid changes, pushes, and opens a PR assigned to the user with a terse description."
 disable-model-invocation: true
 audience: others
 ---
@@ -34,9 +34,9 @@ git switch -c <branch> origin/<base>
 
 Uncommitted changes in the working tree carry over onto the new branch, which is intended. If the changes are already committed on the current branch, move them onto the new branch with `git cherry-pick` or `git rebase` rather than losing them. Name the branch clearly from the changes, for example `fix-token-refresh-race`.
 
-## Commit only valid code changes
+## Commit only valid changes
 
-Inspect the changes with `git status`, then commit by following the [[commit]] skill; invoke it so its exact conventions load rather than committing by hand. Do not commit design files (any .md or .plan), secrets, environment files, or unrelated or accidental changes. Commit only code changes.
+Inspect the changes with `git status`, then commit by following the [[commit]] skill; invoke it so its exact conventions load rather than committing by hand. That skill decides which files belong in a commit. On top of it, leave out unrelated or accidental changes.
 
 ## Push and open the PR
 
