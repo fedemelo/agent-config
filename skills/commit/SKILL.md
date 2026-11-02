@@ -7,6 +7,8 @@ When told to commit, do not change the code; only commit what is already there.
 
 Commit only code changes. Never commit design files (any .md or .plan), environment files, or secrets.
 
+Commit only what belongs in the project. Never commit environment files or secrets. Never commit a file written to plan or track the work (usually .md or .plan) design notes, or scratch files, even if a later agent might find it useful. Changes to documents the project already tracks are committed like code. A document created during this work is committed only if the user asked for that document, such as a README or a skill. When in doubt, leave it out and say so: a missing commit is easy to add later, while a wrong one has to be undone.
+
 Keep commits modular: one commit per separate change, ideally one per file. Group files into a single commit only when committing a file on its own would fail the commit pipeline, linting, or checks that would pass once its dependent files are included.
 
 Never disable linting or any verification to make a commit pass. Never use the `--no-verify` flag.
