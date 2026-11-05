@@ -161,12 +161,12 @@ Check, do not assume:
 
 Then `rm -rf /tmp/agent-config-src /tmp/git-tools-src`.
 
-## Conflicts to raise, not resolve
+## Conflicts with org policy: the org wins
 
-Both of these are real disagreements between the user's conventions and pod policy. Name them and let the user decide; do not quietly pick a side.
+Where the user's conventions disagree with the organization's settings or a repo's mandated workflow, follow the organization. Do not ask the user to decide; the report says what conflicted and that the org's side was used. This covers the two known conflicts and any new one found the same way.
 
-- **Commit attribution.** The `commit` skill forbids a `Co-Authored-By` trailer, and git-tools' `commit-msg` hook strips one. The pod's managed settings (`/etc/claude-code/managed-settings.json`, key `attribution.commit`) inject exactly that trailer, and organization policy requires it. Managed settings outrank a user-scope skill. Installing the hook would also rewrite commit messages in **every** repo in the pod, since `core.hooksPath` is global.
-- **Repo-specific delivery skills.** A repo may mandate its own PR workflow — `canals` tells every agent to use `/canals:ship-it` — which overlaps `commit` and `open-pr`. Both sets are installed; which wins is the user's call, per repo.
+- **Commit attribution.** The `commit` skill forbids a `Co-Authored-By` trailer, and git-tools' `commit-msg` hook strips one. The pod's managed settings (`/etc/claude-code/managed-settings.json`, key `attribution.commit`) inject exactly that trailer, and organization policy requires it. So the hook is not installed and the trailer stays. Installing it would also rewrite commit messages in **every** repo in the pod, since `core.hooksPath` is global.
+- **Repo-specific delivery skills.** A repo may mandate its own PR workflow — `canals` tells every agent to use `/canals:ship-it` — which overlaps `commit` and `open-pr`. Both sets are installed, and in a repo that mandates its own workflow, that workflow wins.
 
 Also worth stating plainly: without git-tools, the review skills (`local-review`, `address-review`, `discussion-audit`, `fact-check-my-review`) lose the `git review-feedback` read they are built on, and since no hooks are installed here the failure is a bare `git: 'review-feedback' is not a git command` rather than anything that explains itself. Those skills say to report that and stop, which is the right answer either way.
 
@@ -178,4 +178,4 @@ To edit a skill for yourself, edit it under `/mnt/personal/claude/skills/` and r
 
 ## Report
 
-Say which skills and tools were copied, which were deleted because the repo no longer has them, that the dotfiles script was created or extended, what the verification showed for each runtime, and that a new Claude or Codex session is needed before the skills are callable. List the conflicts above last, as decisions waiting on the user.
+Keep it short: a bulleted list of every action taken, one short line each, and nothing else. That includes skills and tools copied, anything deleted, the dotfiles script created or extended, anything done to the pod, and each conflict resolved for the org (for example, "Skipped the commit-msg hook: it strips the `Co-Authored-By` trailer that org policy requires"). Group the bullets under headings only when the groups say something; otherwise, keep one flat list. A failed verification check is its own bullet. Passing checks are not. End with one line saying a new Claude or Codex session is needed before the skills are callable. Do not list decisions for the user.
