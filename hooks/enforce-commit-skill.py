@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """PreToolUse hook: require the `commit` skill to be invoked before `git commit`.
 
-If the Bash command being run is a `git commit`, checks this session's transcript for evidence
-that the `commit` skill was already invoked. If not found, blocks the command and tells the
-model to invoke the skill first.
+If the Bash command being run is a `git commit`, checks the caller's transcript (the session's, or
+the subagent's when one is running the command) for evidence that the `commit` skill was already
+invoked. If not found, blocks the command and tells the model to invoke the skill first.
 """
 
 import re
