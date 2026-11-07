@@ -58,6 +58,8 @@ The `audience` frontmatter key is `others` when someone other than the user read
 
 They are hooks because no permission rule can check session history or the filesystem.
 
+A subagent's commands are judged by the subagent's own transcript. Its payload still names the session's file, so `_pretooluse.py` follows `agent_id` to `<session>/subagents/agent-<agent_id>.jsonl`. A skill the session loaded doesn't count for its subagents, which never saw it. A fork is the exception. It inherits the session's history up to the point it was started, and its file names that point in a leading `fork-context-ref` line, so that much of the session's transcript counts for it.
+
 ## Settings
 
 `settings.json.example` grants no pre-approved commands. An allow rule would take a command out of the auto mode classifier's review. It's for owned machines only. The installer refuses to run in a pod, and the pod procedure skips the file. Its blank `attribution.commit` would lose to the pod's managed settings anyway.
