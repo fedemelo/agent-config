@@ -7,8 +7,9 @@ set -uo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 hook="$repo_root/hooks/enforce-commit-skill.py"
 
-transcript="$(mktemp)"
-trap 'rm -f "$transcript"' EXIT
+scratch="$(mktemp -d)"
+trap 'rm -rf "$scratch"' EXIT
+transcript="$scratch/session.jsonl"
 
 pass=0; fail=0
 
@@ -56,6 +57,49 @@ check "a namespaced skill call allows" \
 check "typing /commit allows" "$(verdict "git commit -m x" "$(slash_call commit)")" "allow"
 check "typing the namespaced command allows" \
   "$(verdict "git commit -m x" "$(slash_call fedemelo:commit)")" "allow"
+
+echo "=== a subagent is judged by its own transcript ==="
+# A subagent's payload still names the session's transcript; its own calls are recorded beside it.
+mkdir -p "$scratch/session/subagents"
+agent_transcript="$scratch/session/subagents/agent-a1.jsonl"
+subagent_verdict() { # session transcript line, subagent transcript line
+  printf '%s' "$1" > "$transcript"
+  printf '%s' "$2" > "$agent_transcript"
+  decide "$(printf '{"tool_name":"Bash","tool_input":{"command":"git commit -m x"},"transcript_path":"%s","agent_id":"a1"}' \
+    "$transcript")"
+}
+check "the subagent invoking the skill allows" "$(subagent_verdict "" "$(skill_call commit)")" "allow"
+check "the subagent without the skill blocks" "$(subagent_verdict "" "$(skill_call open-pr)")" "deny"
+# The session loading the skill never put its rules in front of the subagent.
+check "only the session invoking the skill blocks" "$(subagent_verdict "$(skill_call commit)" "")" "deny"
+check "a subagent with no transcript blocks" \
+  "$(decide "$(printf '{"tool_name":"Bash","tool_input":{"command":"git commit -m x"},"transcript_path":"%s","agent_id":"nope"}' \
+    "$transcript")")" "deny"
+check "the session is still judged by its own transcript" \
+  "$(verdict "git commit -m x" "$(skill_call commit)")" "allow"
+
+echo "=== a fork also counts the session history it inherited ==="
+# A fork's transcript opens with a pointer to the last session entry it inherited.
+filler='{"type":"user"}'
+fork_ref='{"type":"fork-context-ref","parentLastUuid":"u2"}'
+entry() { # uuid, transcript line
+  printf '%s' "$2" | sed "s/^{/{\"uuid\":\"$1\",/"
+}
+session_lines() { # transcript lines, one entry each, with uuids u1, u2, ...
+  local i=0 line
+  for line in "$@"; do i=$((i+1)); entry "u$i" "$line"; printf '\n'; done
+}
+check "the session loading the skill before the fork allows" \
+  "$(subagent_verdict "$(session_lines "$(skill_call commit)" "$filler")" "$fork_ref")" "allow"
+check "the session loading the skill after the fork blocks" \
+  "$(subagent_verdict "$(session_lines "$filler" "$filler" "$(skill_call commit)")" "$fork_ref")" "deny"
+check "the fork loading the skill itself allows" \
+  "$(subagent_verdict "$(session_lines "$filler" "$filler")" "$fork_ref
+$(skill_call commit)")" "allow"
+check "an inherited entry missing from the session blocks" \
+  "$(subagent_verdict "$(session_lines "$(skill_call commit)")" "$fork_ref")" "deny"
+check "an ordinary subagent still ignores the session" \
+  "$(subagent_verdict "$(session_lines "$(skill_call commit)" "$filler")" "$filler")" "deny"
 
 echo "=== only a commit is judged ==="
 check "another git command passes" "$(verdict "git status")" "allow"
