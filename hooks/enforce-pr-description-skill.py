@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """PreToolUse hook: require the `pr-description` skill before writing a PR body.
 
-If the Bash command creates a PR, or edits one's body, checks this session's transcript for
-evidence that the `pr-description` skill was already invoked. If not found, blocks the command
-and tells the model to invoke the skill first, so PR bodies follow the project's actual
-convention instead of the generic Summary/Test-plan template baked into the base PR instructions.
+If the Bash command creates a PR, or edits one's body, checks the caller's transcript (the
+session's, or the subagent's when one is running the command) for evidence that the
+`pr-description` skill was already invoked. If not found, blocks the command and tells the model
+to invoke the skill first, so PR bodies follow the project's actual convention instead of the
+generic Summary/Test-plan template baked into the base PR instructions.
 """
 
 import re
