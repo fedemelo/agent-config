@@ -131,8 +131,7 @@ h="$(new_home)"
 out="$(HOME="$h" AGENT_CONFIG_ENVIRONMENT=devspaces "$r/install.sh")"
 check "it is linked there" "$(readlink "$h/.claude/skills/pod-only")" "$r/skills/pod-only"
 check "and for Codex there" "$(readlink "$h/.agents/skills/pod-only")" "$r/skills/pod-only"
-# The exclusion runs the other way too: land and todo are scoped to an owned machine, so a pod
-# gets neither. Counted from the repo, so scoping another skill later does not fail the suite.
+# The exclusion runs the other way too: the skills scoped to an owned machine are left out of a pod. Counted from the repo, so scoping another skill later does not fail the suite.
 owned_only="$(python3 "$r/scripts/skills_for.py" devspaces --excluded | wc -l | tr -d ' ')"
 check "the owned-machine skills are left out instead" \
   "$(echo "$out" | grep -c "Left out $owned_only skill")" "1"
