@@ -8,6 +8,7 @@ description: >-
   request, or asks what is wrong with their Rust or how to make it more idiomatic, even if
   they don't say "review". Pairs with the rust-best-practices skill, which covers writing
   new code.
+environment: owned-machine
 ---
 
 # Rust review
