@@ -8,6 +8,7 @@ description: >-
   clippy, or rustfmt, even when the user does not ask for "best practices" or "idiomatic"
   code. Synthesized from the Google Rust Style Guide, the Rust API Guidelines,
   Effective Rust, Rust Design Patterns, and Microsoft's Pragmatic Rust Guidelines.
+environment: owned-machine
 ---
 
 # Rust best practices
