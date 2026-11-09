@@ -8,6 +8,7 @@ description: >-
   or rewrite code in Rust ("rewrite this in Rust", "what would this look like in Rust",
   "move this module to Rust"), even if they don't say "port". Pairs with the
   rust-best-practices skill, which covers the target code's style.
+environment: owned-machine
 ---
 
 # Rust port
