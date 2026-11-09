@@ -1,6 +1,6 @@
 ---
 name: address-review
-description: Triages PR review feedback (human comments and bot findings) on the current branch's PR, on a given number or URL, or in a review handed over as text, fixes the real issues by following the commit skill, and returns replies in this session for the rest. Never comments on the PR or asks anyone for a review, and pushes only when asked to.
+description: Triages PR review feedback (human comments and bot findings) on the current branch's PR, on a given number or URL, or in a review handed over as text, fixes the real issues by following the commit skill, pushes the fixes it is sure of, and returns replies in this session for the rest. Never comments on the PR or asks anyone for a review.
 disable-model-invocation: true
 audience: others
 ---
@@ -13,7 +13,7 @@ Whoever invoked this skill is the caller: the user in this session, or another s
 
 Every reply here is read by a person on the PR, and the caller posts it as written, so load the [[plain-english]] standard before writing any of them and follow it in full. That covers each reply for a point that is not real, each reply carried forward from an earlier pass, and every blocking question, since the caller pastes those onto the PR too. It governs prose only, never code, identifiers or quoted text.
 
-Pushing is allowed only when the caller explicitly asks for it; else, the work stays as local commits. A push the caller asked for covers updating the branch and nothing further, so it still comes with no re-review request and no comment about what changed.
+Push the fixes you are sure of as soon as they are committed, without waiting to be asked, even while other points are still open. The caller can still say not to push, and then the work stays as local commits. A push covers updating the branch and nothing further, so it comes with no re-review request and no comment about what changed.
 
 ## Which PR to address
 
@@ -94,5 +94,7 @@ caller never asked you to act on.
 1. Commit the changes you are sure about by following the [[commit]] skill; invoke it so its exact conventions load.
 2. Every change you made is either committed or discarded, so that nothing of yours is left in the working tree. A change you are unsure about, or that is worth discussing before it lands, gets discarded rather than committed. Say in your response what you did, why you stopped, and what you discarded, in enough detail that the caller can ask for it deliberately.
 3. Discard only what you wrote. Anything already in the tree when you started is not yours to commit or to revert, so leave it untouched and say it is there.
-4. Push only if the caller asked for a push, and then push the branch alone, as the hard constraint at the top says.
-5. Return every reply and discussion point in your response, for the caller to review before publishing.
+4. Push the branch without asking first. Your commits hold only fixes you are sure of, so they go up even while a blocking question or a discarded change is still open; those wait in your response for the caller. Hold the push only when the caller said not to push, and then say the commits are local.
+5. Once the caller settles what was open, whether by answering a question or by working out a plan with you, write the code, commit it, and push, again without asking. Their answer is the go-ahead, so the same rule applies to that pass as to the first one.
+6. A push that is rejected is reported to the caller, never forced.
+7. Return every reply and discussion point in your response, for the caller to review before publishing.
