@@ -34,7 +34,7 @@ The `environment` skill decides which kind of environment a session is in. A dev
 
 In a pod, `install.sh` refuses to run. Symlinked skills are never loaded there, and the installers write machine-wide config the pod doesn't own. `/wire-up` follows `skills/wire-up/targets/devspaces.md` instead. It copies onto the persistent share and from there into both skill directories, and it deletes whatever the repo no longer has. That file explains what breaks otherwise.
 
-The `environment` frontmatter key scopes a skill to `devspaces`, `owned-machine`, or `any` (the default). Every installed skill spends its description on every session, so a skill that can't be used somewhere shouldn't be installed there. Only `land` and `todo` are scoped, to `owned-machine`. The rest work on repo and GitHub state, which is the same everywhere.
+The `environment` frontmatter key scopes a skill to `devspaces`, `owned-machine`, or `any` (the default). Every installed skill spends its description on every session, so a skill that can't be used somewhere shouldn't be installed there.
 
 - `scripts/skills_for.py` is the only reader of the key. `install.sh` and the devspaces procedure both select through it, so they can't disagree about which skills a pod has.
 - A skill may only `[[reference]]` one that is installed everywhere it is. Nothing expands a reference at runtime, so a missing one fails silently.
