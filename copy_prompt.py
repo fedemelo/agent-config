@@ -42,6 +42,7 @@ NAMED_ONLY = {
     "land": "LAND GUIDELINES",
     "local-review": "LOCAL REVIEW GUIDELINES",
     "open-pr": "OPEN PR GUIDELINES",
+    "panopticon": "PANOPTICON GUIDELINES",
     "pr-from-review": "PR FROM REVIEW GUIDELINES",
     "review-queue": "REVIEW QUEUE GUIDELINES",
     "review-rounds": "REVIEW ROUNDS GUIDELINES",

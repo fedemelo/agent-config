@@ -1,0 +1,5 @@
+interface:
+  display_name: "Panopticon"
+  short_description: "Watch and drive your remote agent workspaces from one session"
+policy:
+  allow_implicit_invocation: false
