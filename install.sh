@@ -15,7 +15,7 @@ managed_dir="${AGENT_CONFIG_MANAGED_DIR:-/etc/claude-code}"
 environment="${AGENT_CONFIG_ENVIRONMENT:-}"
 detected=""
 if [ -z "$environment" ]; then
-  if [ -d "$share_dir" ] && [ -d "$managed_dir" ] && command -v devspaces >/dev/null 2>&1; then
+  if [ -d "$share_dir" ] && [ -d "$managed_dir" ]; then
     environment="devspaces"
   else
     environment="owned-machine"

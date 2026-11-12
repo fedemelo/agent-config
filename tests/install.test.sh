@@ -156,13 +156,21 @@ echo "=== in a pod, the installer refuses rather than half-installing ==="
 h="$(new_home)"; fake_bin="$(mktemp -d "$ROOT/bin.XXXXXX")"
 printf '#!/bin/sh\nexit 0\n' > "$fake_bin/devspaces"; chmod +x "$fake_bin/devspaces"
 share="$(mktemp -d "$ROOT/share.XXXXXX")"; managed="$(mktemp -d "$ROOT/managed.XXXXXX")"
-out="$(HOME="$h" PATH="$fake_bin:$PATH" AGENT_CONFIG_SHARE_DIR="$share" \
+out="$(HOME="$h" AGENT_CONFIG_SHARE_DIR="$share" \
   AGENT_CONFIG_MANAGED_DIR="$managed" "$repo_root/install.sh" 2>&1)"; code=$?
 check "it exits non-zero" "$code" "1"
 check "it names the right tool instead" "$(echo "$out" | grep -c 'Run /wire-up instead')" "1"
 check "nothing was linked" "$(test -e "$h/.claude/skills" && echo present || echo absent)" "absent"
 check "no settings.json was written" \
   "$(test -e "$h/.claude/settings.json" && echo present || echo absent)" "absent"
+
+# A laptop can have the devspaces CLI to drive pods from outside, so the CLI alone is no pod.
+echo "=== the devspaces CLI alone does not make a pod ==="
+h="$(new_home)"
+out="$(HOME="$h" PATH="$fake_bin:$PATH" AGENT_CONFIG_SHARE_DIR="$ROOT/no-share" \
+  AGENT_CONFIG_MANAGED_DIR="$ROOT/no-managed" "$repo_root/install.sh" 2>&1)"; code=$?
+check "it installs" "$code" "0"
+check "for an owned machine" "$(echo "$out" | grep -c 'for the owned-machine environment')" "1"
 
 # Overriding the guess is a human naming the environment, which is not the same as asking to be
 # stopped, and it is how the cases above select an environment at all.
