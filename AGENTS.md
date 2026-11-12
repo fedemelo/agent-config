@@ -30,7 +30,7 @@ The manual update order is `git pull && ./install.sh` in git-tools first, then t
 
 ## Environments
 
-The `environment` skill decides which kind of environment a session is in. A devspaces pod has all of `/mnt/personal`, `/etc/claude-code/` and a `devspaces` executable. A host with none of them is an owned machine. When the signals disagree, every skill stops rather than guess. `install.sh` applies the same rule in shell.
+The `environment` skill decides which kind of environment a session is in. A devspaces pod has both `/mnt/personal` and `/etc/claude-code/`. A host with neither is an owned machine. The `devspaces` CLI isn't a signal, since a laptop can have it to drive pods. When the signals disagree, every skill stops rather than guess. `install.sh` applies the same rule in shell.
 
 In a pod, `install.sh` refuses to run. Symlinked skills are never loaded there, and the installers write machine-wide config the pod doesn't own. `/wire-up` follows `skills/wire-up/targets/devspaces.md` instead. It copies onto the persistent share and from there into both skill directories, and it deletes whatever the repo no longer has. That file explains what breaks otherwise.
 
