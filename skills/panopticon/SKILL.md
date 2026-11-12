@@ -20,8 +20,17 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon transcripts <ws>` | Every transcript path, newest first |
 | `panopticon screen <ws> [--lines <n>]` | The bottom of the agent's terminal |
 | `panopticon send <ws> [--wake] -- <message>` | Queues a message. With no message, it reads stdin |
+| `panopticon inbox [--peek]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words. Marks them read unless `--peek` |
 
 Reading works for Claude Code and Codex workspaces. For anything else, `read` and `screen` say so; tell the user rather than trying another way in.
+
+## The inbox
+
+A launchd agent runs `panopticon tick` every minute in the user's active hours. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. The user doesn't need you for the notification; they need you for what to do about it.
+
+Start a session by reading the inbox, and read it again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
+
+Use `--peek` when you are only looking and the user hasn't seen the events yet, so they stay for the next read.
 
 ## Reading a workspace
 
@@ -54,7 +63,7 @@ A successful send means queued, not delivered or done. Never send again because 
 
 ## Waiting on a turn
 
-When the user asks to hear when a workspace is done, take `agentStatusChangedAt` from `status` right before sending, or right away if nothing is being sent. Then poll `status` every 15 seconds in a background command, until one of these:
+The inbox already reports every finished turn, within a minute, in active hours. When the user asks to hear when a workspace is done, tell them the notification will come, and wait yourself only when they want the result in this session or it is outside their active hours. In that case, take `agentStatusChangedAt` from `status` right before sending, or right away if nothing is being sent. Then poll `status` every 15 seconds in a background command, until one of these:
 
 - `status` isn't `running`. The workspace stopped, and that is not a finished turn: say so.
 - `agentStatusChangedAt` differs from the one you took and `agentStatus` isn't `working`. A turn ended. `idle` can still mean a question or an approval is waiting, so read the workspace before you call it done, and never call it a success without reading it.
