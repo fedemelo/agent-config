@@ -33,6 +33,7 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [land](skills/land/SKILL.md)\*: ships your commits through a disposable PR that merges itself.
 - [open-pr](skills/open-pr/SKILL.md)\*: branches off the latest default branch, commits, assigns you and writes a strict description.
 - [todo](skills/todo/SKILL.md)\*: files a GitHub issue assigned to you.
+- [panopticon](skills/panopticon/SKILL.md)\*: one session to watch your Dev Spaces agents from, through the `panopticon` CLI. It says what each finished or is stuck on, passes your prompts on, and brings idle ones back to you.
 - [commit](skills/commit/SKILL.md): one commit per file, a terse message, no AI attribution.
 - [fact-check-my-review](skills/fact-check-my-review/SKILL.md): checks that a PR review you posted is true, its fixes work and its severity fits.
 - [discussion-audit](skills/discussion-audit/SKILL.md): checks your posted replies against the PR code and finds if you forgot to address something.
