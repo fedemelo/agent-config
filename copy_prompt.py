@@ -36,6 +36,7 @@ INCLUDED = {
 NAMED_ONLY = {
     "address-review": "ADDRESS REVIEW GUIDELINES",
     "commit": "COMMIT GUIDELINES",
+    "dictation-vocab": "DICTATION VOCAB GUIDELINES",
     "discussion-audit": "DISCUSSION AUDIT GUIDELINES",
     "fact-check-my-review": "FACT-CHECK MY REVIEW GUIDELINES",
     "land": "LAND GUIDELINES",

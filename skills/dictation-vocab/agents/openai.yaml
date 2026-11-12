@@ -1,0 +1,5 @@
+interface:
+  display_name: "Tune dictation vocabulary"
+  short_description: "Fix words local Whisper dictation gets wrong, proven on saved audio"
+policy:
+  allow_implicit_invocation: true
