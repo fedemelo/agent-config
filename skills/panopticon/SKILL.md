@@ -1,6 +1,6 @@
 ---
 name: panopticon
-description: Makes this session the one place the user watches and drives their remote agent workspaces from, through the panopticon CLI. Lists them, says what each one finished or is stuck on, forwards the user's prompts to the workspace they name, waits on a turn when asked, and brings idle and finished workspaces back to the user to continue or drop.
+description: Makes this session the one place the user watches and drives their remote agent workspaces from, through the panopticon CLI. Lists them, says what each one finished or is stuck on, forwards the user's prompts to the workspace they name, waits on a turn when asked, keeps the user's work items, and brings idle and finished workspaces back to the user to continue, defer or drop.
 disable-model-invocation: true
 environment: owned-machine
 audience: user
@@ -20,13 +20,22 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon transcripts <ws>` | Every transcript path, newest first |
 | `panopticon screen <ws> [--lines <n>]` | The bottom of the agent's terminal |
 | `panopticon send <ws> [--wake] -- <message>` | Queues a message. With no message, it reads stdin |
-| `panopticon inbox [--peek]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words. Marks them read unless `--peek` |
+| `panopticon inbox [--peek]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words, plus what the GitHub rules did. Marks them read unless `--peek` |
+| `panopticon items` | The user's work items by state |
+| `panopticon item show <item>` | One item as markdown: links, workspaces, state, summary |
+| `panopticon item new`, `item edit <item>` | Add an item by hand, or edit one in `$EDITOR` |
+| `panopticon open <item>` | Opens the item's links in the browser |
+| `panopticon defer <item> --summary <file or -> [--blocker <b>] [--pick-up <p>]` | Records an approved summary and sets the item aside |
+| `panopticon done <item>` | Marks an item done |
+| `panopticon resume <item> [--group <g>]` | Creates a workspace seeded with a deferred item's summary, and opens its links |
+| `panopticon rules check` | What each GitHub rule would do now, without doing it |
+| `panopticon tabs list [--match <url>...]`, `tabs close <url>...` | Chrome's open tabs, or closes the ones the URLs cover |
 
 Reading works for Claude Code and Codex workspaces. For anything else, `read` and `screen` say so; tell the user rather than trying another way in.
 
 ## The inbox
 
-A launchd agent runs `panopticon tick` every minute in the user's active hours. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. The user doesn't need you for the notification; they need you for what to do about it.
+A launchd agent runs `panopticon tick` every minute in the user's active hours. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
 
 Start a session by reading the inbox, and read it again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
 
@@ -71,12 +80,33 @@ The inbox already reports every finished turn, within a minute, in active hours.
 
 A failed `status` is an error to report, never a sign that the turn ended. When you watch several workspaces, keep a separate baseline for each. Once the background command stops, you are no longer watching, so don't say you are.
 
+## Work items
+
+A work item is the record of one piece of the user's work: its links, its workspaces, its state, and, once deferred, a summary. Workspaces and tabs are views of it that can be closed and opened again. When the user asks what they're working on, start from `items`, not from `ls`.
+
+Deferring is where you do the work the CLI never does. When the user wants to set an item aside:
+
+1. Read the transcripts of its workspaces.
+2. Draft a summary: the task, what was found, what blocks it, and when to pick it up.
+3. Show it to the user, and change it until they approve it.
+4. Only then call `defer`, passing the summary on stdin with a quoted heredoc, and the blocker and pick-up with `--blocker` and `--pick-up`.
+
+A deferred item's workspaces may then be archived, or deleted with the user's yes. Its summary is what lasts, so never defer without one the user approved.
+
+`done` and `resume` change the item's state, and `resume` creates a workspace. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.
+
+## Rules and tabs
+
+The GitHub rules live in `~/.config/panopticon/config.toml`. Never add or change a rule without the user's yes. Run `rules check` first, so they see what it would create.
+
+`tabs close` closes every tab that a URL covers, which for a repo link is every page of that repo. Run it only when the user asks. Run `tabs list --match` with the same URLs first, and show them what it would close.
+
 ## Triage
 
 When the user asks what needs them, or when a list shows it, sort the workspaces:
 
 - **Waiting on the user**: running and idle after a turn, or showing a question on screen.
 - **Working**: leave alone.
-- **Done or stale**: its PR merged or closed (`gh pr view`), or idle for days. Offer to continue it, archive it, or delete it.
+- **Done or stale**: its PR merged or closed (`gh pr view`), or idle for days. Offer to continue it, defer its item, archive it, or delete it. A workspace whose item is deferred is never offered for deletion.
 
 Archiving and deleting aren't panopticon commands yet. Give the user the `devspaces ws archive <ws>` or `devspaces ws delete <ws>` line for each workspace they choose, and run it only after a yes for that workspace. A delete can't be undone, and it takes everything in the workspace that wasn't pushed.
