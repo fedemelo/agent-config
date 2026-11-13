@@ -17,7 +17,10 @@ git-tools first, then agent-config, because the skills over there call flags tha
 git -C <repo> pull --ff-only && <repo>/install.sh
 ```
 
-`--ff-only` on purpose: a dirty tree, a branch that has diverged, or local commits mean someone was working in that repo, and a merge or rebase to get the pull through is a decision that is not yours. Stop, name the repo and what you found, and leave it untouched.
+`--ff-only` on purpose: a dirty tree or a diverged branch means someone was working in that repo.
+
+- **Local commits the remote lacks, with a clean tree**: run `git -C <repo> pull --rebase`, which puts them on top of the remote's. If it stops on a conflict, run `git -C <repo> rebase --abort`, then stop and name the repo and the conflicting files. Never resolve a conflict yourself, and never push the local commits; report them as unpushed.
+- **Uncommitted changes, or anything else that blocks the pull**: stop, name the repo and what you found, and leave it untouched.
 
 If an installer exits non-zero, report its output as it stands and stop. Both fail loudly at the one thing they cannot verify silently — a `commit-msg` hook that is not stripping trailers, a `settings.json` that no longer parses or names a hook that is not installed — and working around that leaves a setup that looks installed and is not.
 
