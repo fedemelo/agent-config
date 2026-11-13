@@ -24,7 +24,7 @@ Gather full context before forming an opinion.
 
 ```sh
 gh pr diff <pr>
-gh pr view <pr> --json number,title,body,headRefName
+gh pr view <pr> --json number,url,title,body,headRefName,headRefOid
 ```
 
 2. Read the surrounding code the diff touches, not just the diff. Fetch the PR head without checking out, then read files from it:
@@ -72,6 +72,7 @@ Number the comments sequentially and write each as:
 Category: BUG / MAJOR / MINOR / SUGGESTION / HYPOTHETICAL
 Line: <piece of code from the diff so it can be found with ctrl+F>
 File: <path of the file that code lives in>
+Line number: <that line's number in the file at the PR's head, or for a removed line, its number in the base followed by (removed)>
 Reasoning: <the full case for the finding>
 
 Comment: <the comment as it will be posted>
@@ -142,9 +143,11 @@ COMMENT and REQUEST CHANGES both withhold approval; state plainly why.
 
 ## Close
 
-End with exactly these two lines, using the `headRefName` (the PR's head branch) and `number` from the metadata fetched above:
+End with exactly these four lines, using the `headRefName` (the PR's head branch), `number`, `url` and `headRefOid` (the commit you reviewed) from the metadata fetched above:
 
 ```
 Branch name: <branch name>
 PR: #<number>
+URL: <url>
+Commit: <headRefOid>
 ```
