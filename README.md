@@ -27,7 +27,7 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [wire-up](skills/wire-up/SKILL.md)\*: brings any environment's setup up to date.
 - [local-review](skills/local-review/SKILL.md): an in-session PR or code review. Never posts to the PR. E.g. prompt:, `local-review https://github.com/org/repo/pull/1067`
 - [stage-review](skills/stage-review/SKILL.md)\*: puts a local review's comments on the PR as a pending review, each on its line, for you to edit and submit in GitHub.
-- [review-queue](skills/review-queue/SKILL.md)\*: gathers the PRs waiting on your review, assigns an separate agent to local-review each.
+- [review-queue](skills/review-queue/SKILL.md)\*: gathers the PRs waiting on your review, assigns a separate agent to stage-review each.
 - [address-review](skills/address-review/SKILL.md)\*: takes a review, checks whether comments hold, fixes the real comments and drafts in-session replies to the rest, and pushes the fixes it is sure of. It never posts to the PR.
 - [pr-from-review](skills/pr-from-review/SKILL.md)\*: turns a review comment into a draft PR stacked on the reviewed branch, built by a separate agent. Works on your PRs and on other people's.
 - [review-rounds](skills/review-rounds/SKILL.md)\*: up to three local-review then adress-review rounds, each by a fresh agent.
