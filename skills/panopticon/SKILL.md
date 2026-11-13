@@ -30,6 +30,9 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon resume <item> [--group <g>]` | Creates a workspace seeded with a deferred item's summary, and opens its links |
 | `panopticon rules check` | What each GitHub rule would do now, without doing it |
 | `panopticon tabs list [--match <url>...]`, `tabs close <url>...` | Chrome's open tabs, or closes the ones the URLs cover |
+| `panopticon triage` | The workspaces waiting on an answer, with what triage found |
+| `panopticon continue <ws>`, `keep <ws>` | Answers a finding: the work goes on, or leave the workspace alone for good |
+| `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes` | Archives a workspace, or deletes one proposed for deletion |
 
 Reading works for Claude Code and Codex workspaces. For anything else, `read` and `screen` say so; tell the user rather than trying another way in.
 
@@ -93,7 +96,7 @@ Deferring is where you do the work the CLI never does. When the user wants to se
 
 A deferred item's workspaces may then be archived, or deleted with the user's yes. Its summary is what lasts, so never defer without one the user approved.
 
-`done` and `resume` change the item's state, and `resume` creates a workspace. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.
+`done` and `resume` change the item's state, and `resume` creates a workspace. `defer` and `done` also close the Chrome tabs of the item's specific links, unless given `--keep-tabs`. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.
 
 ## Rules and tabs
 
@@ -103,10 +106,19 @@ The GitHub rules live in `~/.config/panopticon/config.toml`. Never add or change
 
 ## Triage
 
-When the user asks what needs them, or when a list shows it, sort the workspaces:
+Every 15 minutes in the user's active hours, a tick checks each workspace and records at most one finding for it. A finding is one of three kinds:
+- **Rested**: idle or stopped for an hour with nothing queued.
+- **Stale**: no activity for 14 days, but it still has an open PR.
+- **Proposed for deletion**: its item is done, its PRs are merged or closed, you approved the review, a newer review replaced it, or it has had no activity for 14 days and has no open PR.
 
-- **Waiting on the user**: running and idle after a turn, or showing a question on screen.
-- **Working**: leave alone.
-- **Done or stale**: its PR merged or closed (`gh pr view`), or idle for days. Offer to continue it, defer its item, archive it, or delete it. A workspace whose item is deferred is never offered for deletion.
+Each finding arrives once in the inbox. A tick never acts on one.
 
-Archiving and deleting aren't panopticon commands yet. Give the user the `devspaces ws archive <ws>` or `devspaces ws delete <ws>` line for each workspace they choose, and run it only after a yes for that workspace. A delete can't be undone, and it takes everything in the workspace that wasn't pushed.
+When the user asks what needs them, run `panopticon triage` for the list, and the inbox for what's new. For each workspace, say in a line why it's there. Read the workspace only when that line doesn't tell the user enough to decide. Then take the answer they give for that workspace:
+
+- `panopticon continue <ws>`: the work goes on. Pair it with a `send` if the user wants the agent to do something next.
+- `panopticon keep <ws>`: leave it as it is. Triage won't propose anything for it again.
+- Defer its item, as described under "Work items", when the work is set aside but must not be lost.
+- `panopticon archive <ws>`: stops it and archives it. It refuses while the agent is working. Pass `--interrupt` only when the user said to stop that turn.
+- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace, named or clearly meant. Never take one yes for several workspaces, and never pass `--yes` on your own. A delete can't be undone, and it takes everything in the workspace that wasn't pushed. It refuses unless the workspace is still proposed for deletion for a reason that holds now. When it refuses, report why rather than finding another way.
+
+A workspace whose item is deferred is never proposed for deletion. Never offer to delete one.
