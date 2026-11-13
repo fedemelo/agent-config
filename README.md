@@ -39,6 +39,7 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [discussion-audit](skills/discussion-audit/SKILL.md): checks your posted replies against the PR code and finds if you forgot to address something.
 - [work-summary](skills/work-summary/SKILL.md): recaps your PRs since a date, split into open, merged and closed.
 - [dictation-vocab](skills/dictation-vocab/SKILL.md): finds words your local Whisper dictation gets wrong in its log, proves each fix on the saved audio, and updates the word list.
+- [memory-check](skills/memory-check/SKILL.md): when your Mac runs out of memory, finds which apps are using it and says what to close or restart. Changes nothing.
 - [rust-best-practices](skills/rust-best-practices/SKILL.md), [rust-review](skills/rust-review/SKILL.md), [rust-port](skills/rust-port/SKILL.md): write, review and port Rust. Taken from [BeautifulRust](https://github.com/morganlinton/BeautifulRust) by Morgan Linton under the MIT license (see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)) and changed since.
 - Shared standards the others follow: [environment](skills/environment/SKILL.md), [side-session](skills/side-session/SKILL.md), [pr-target](skills/pr-target/SKILL.md), [comment-hygiene](skills/comment-hygiene/SKILL.md), [pr-description](skills/pr-description/SKILL.md), [plain-english](skills/plain-english/SKILL.md).
 
