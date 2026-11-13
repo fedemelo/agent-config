@@ -14,6 +14,8 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 
 | Command | What it does |
 | --- | --- |
+| `panopticon day [--json]` | Whether this session starts the day, the workspaces a fresh start would wake, those left asleep and why, and how the reviews stand. Changes nothing |
+| `panopticon day start [--wake <ws>...] [--anyway]` | Wakes the workspaces named and reads their last words, opens each staged review's Files changed tab, and records the day as started. Prints what it did as JSON |
 | `panopticon ls [--group <g>]` | The user's workspaces, grouped: name, status, agent status, group, repo, title |
 | `panopticon status <ws>` | One workspace as JSON, including `agentStatusChangedAt` |
 | `panopticon read <ws> [--transcript <path>] [--records <n>]` | The conversation text of the newest transcript, or of the one named. Prints the path it chose on stderr |
@@ -38,11 +40,30 @@ Reading works for Claude Code and Codex workspaces. For anything else, `read` an
 
 ## The inbox
 
-A launchd agent runs `panopticon tick` every minute in the user's active hours. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
+A launchd agent runs `panopticon tick` every minute. Outside the user's active hours, a tick only records turns that ended, with their last words, and notifies nothing. In active hours, each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
 
-Start a session by reading the inbox and `items --due`, as described under "Deferred items coming back". Read the inbox again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
+Start a session with `panopticon day --json`, as described under "Starting the day". Then read the inbox and `items --due`, as described under "Deferred items coming back". Read the inbox again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
 
 Use `--peek` when you are only looking and the user hasn't seen the events yet, so they stay for the next read.
+
+## Starting the day
+
+`day --json` says in `start` whether this session starts the user's day:
+
+- `fresh`: nothing has run since their active hours began today, and the day hasn't been started. Open the day as below.
+- `in-use`, `already-started`, `before-the-day` or `not-an-active-day`: the day is under way, hasn't begun, or isn't a workday. Say nothing about it, and go on to the inbox. Never wake anything or open tabs for it. Run `day start --anyway` only when the user asks to start the day all the same.
+
+On a fresh start, say so in one line. Then ask one numbered question: "**1.** Wake the workspaces of your active items". Under it, name each workspace in `wake` by its item's title and what it was doing, from its title. Say that each one runs until Dev Spaces stops it after 2 idle hours. Say how many are in `over_the_cap`, and that the user can ask for any of them by name. The workspaces in `left_asleep` stay asleep, so don't offer them.
+
+Then run `day start`, with `--wake` and the workspaces the user agreed to. A yes to 1 means every workspace in `wake`. A reply in words, such as "1 but not the debugger one", means what it says. With no yes, run `day start` without `--wake`, which still opens the tabs and records the day. Never name a workspace the user didn't agree to: `day start` refuses one it wouldn't offer, and wakes nothing then. It also refuses more workspaces than `day` offered in `wake`. Pass `--anyway` for that only when the user asked for the extra ones by name.
+
+Brief from `triage --json`, as under "Briefing". Every woken workspace now has last words, unless its entry in `day start`'s output says why not: say so plainly, and never guess where it left off from its title. Its finding was answered as `continue`, so it gets no number. A number goes only to a real choice, such as a workspace whose last words say it's finished.
+
+Then the reviews, from `day --json`'s `reviews`, in one short block:
+
+- Staged: each PR by its title, with its number of comments, and say its Files changed tab is open (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened, and give those PRs' Files changed links instead.
+- Not staged, each PR by its title, with its state in plain words: running, waiting (it runs idle with nothing staged, so it may be asking something; read it), never ran, or stopped without staging.
+- A review that never ran gets a numbered question: "**N.** Start the review of *<PR title>*". A yes runs `panopticon send <ws> --wake -- /stage-review <url>`. A review that stopped without staging can't be read while stopped: say so, and ask in words whether to start it the same way.
 
 ## Reading a workspace
 
@@ -159,4 +180,4 @@ Each answer runs as one of these:
   - `--interrupt`, only when the user said to stop the agent's turn, or to drop the messages queued for it.
   - `--discard-work`, only after delete listed what it found that isn't on GitHub (uncommitted or untracked changes, stashes, commits on no remote branch, entries that aren't repos), you showed that list to the user, and they said yes to losing it. Tell them ignored files, such as a `.env`, are lost too and never listed. Delete starts a stopped or archived workspace to check it, and stops it again if it then refuses. It refuses one it can't read or that holds no repo. For that one, pass it only after the user heard its work couldn't be checked and said yes to losing whatever it holds. Never pass it just to skip the check.
 
-  When it refuses, report why. Ask about the flag that refusal names, if any, and never find another way to delete. A refusal after delete started the workspace may say the next run needs `--unproposed`, since starting it can reset its rest. Ask for that yes too, saying why it's needed.
+  When it refuses, report why. Ask about the flag that refusal names, if any, and never find another way to delete.
