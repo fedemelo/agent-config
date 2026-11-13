@@ -55,7 +55,7 @@ You read that file rather than handing its path to the agent that needs it. addr
 
 1. Spawn an agent with the Agent tool to review the PR, of any type whose context starts empty. Never a fork, which inherits this session's context and defeats the whole skill. Prompt it with the PR number and this task, and with nothing else:
 
-> Invoke the local-review skill and review PR #`<n>`. Follow it exactly. Return the review as your final report, whole and verbatim: every finding with all of its fields, in the order and numbering it wrote them, then the verdict and the two closing lines.
+> Invoke the local-review skill and review PR #`<n>`. Follow it exactly. Return the review as your final report, whole and verbatim: every finding with all of its fields, in the order and numbering it wrote them, then the verdict and every closing line.
 
    That prompt is identical in every round. Say nothing about which round this is, what an earlier review found, what has been fixed since, or that any of it happened. One word of it and the review is no longer written in a clean context, which is the only thing this skill has to offer.
 
