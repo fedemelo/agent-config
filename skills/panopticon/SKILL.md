@@ -113,12 +113,37 @@ Every 15 minutes in the user's active hours, a tick checks each workspace and re
 
 Each finding arrives once in the inbox. A tick never acts on one.
 
-When the user asks what needs them, run `panopticon triage` for the list, and the inbox for what's new. For each workspace, say in a line why it's there. Read the workspace only when that line doesn't tell the user enough to decide. Then take the answer they give for that workspace:
+When the user asks what needs them, run `panopticon triage` for the list, and the inbox for what's new.
+
+### Briefing
+
+The user decides from your briefing alone, so it must hold everything they need. A workspace name like `goofy-deer-ppuv` means nothing to them, and neither does a bare PR number. Either one sends them off to look it up, which is the work this skill exists to save.
+
+- Group the workspaces by work item, and name the item.
+- For each workspace, say in plain words what it was doing. Take this from its title and starting prompt, not from its name.
+- Name each PR by its title, its state and when that changed: "*archive reference documents beside an order* (#65873), merged yesterday". Get them from `gh pr view`, never from `references`, which can be out of date.
+- Say where the agent left off, in a line, from what it last said. Use `panopticon read` on a running workspace. A stopped one would have to be woken to read it, so wake it only when the user agreed to that.
+- Say why triage flagged it, and what you'd do.
+- Put the workspace name last, as a reference, never as the way to identify it.
+
+Before you trust a finding, check it. Triage can be wrong. A workspace proposed for deletion for having no open PR may name its PR only as `#<n>` in its title or prompt. Look it up, and say so when a finding is wrong.
+
+### Decisions
+
+Give every binary decision a letter: A, B, C and so on, in one run through the whole briefing. Each letter is one action on one workspace or item, stated so that "yes" means do it: "**A.** Delete the drawings fix workspace". Something that isn't a yes-or-no choice gets no letter. Ask about it in words.
+
+The user answers with the letters they want, such as "A, C, F". Each letter named is a yes to that action. Each letter left out is a no, so that action doesn't happen and nothing else changes. A letter named counts as the user's yes for that one workspace, deletes included, since each one was shown on its own. A reply that isn't only letters is read as words. When it's unclear, ask before acting.
+
+Then run the actions the user chose, one workspace at a time, and report each result. Stop and report the first one that fails.
+
+### Actions
+
+Each answer runs as one of these:
 
 - `panopticon continue <ws>`: the work goes on. Pair it with a `send` if the user wants the agent to do something next.
 - `panopticon keep <ws>`: leave it as it is. Triage won't propose anything for it again.
 - Defer its item, as described under "Work items", when the work is set aside but must not be lost.
 - `panopticon archive <ws>`: stops it and archives it. It refuses while the agent is working. Pass `--interrupt` only when the user said to stop that turn.
-- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace, named or clearly meant. Never take one yes for several workspaces, and never pass `--yes` on your own. A delete can't be undone, and it takes everything in the workspace that wasn't pushed. It refuses unless the workspace is still proposed for deletion for a reason that holds now. When it refuses, report why rather than finding another way.
+- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace: by its letter, or named or clearly meant. A general "delete them all" isn't a yes for each one, and you never pass `--yes` on your own. A delete can't be undone, and it takes everything in the workspace that wasn't pushed. It refuses unless the workspace is still proposed for deletion for a reason that holds now. When it refuses, report why rather than finding another way.
 
 A workspace whose item is deferred is never proposed for deletion. Never offer to delete one.
