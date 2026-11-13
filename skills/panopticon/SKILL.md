@@ -37,7 +37,8 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon triage [--json]` | A briefing per workspace waiting on an answer: its item, title and prompt, status, PRs read from GitHub, last words, and what triage found |
 | `panopticon continue <ws>`, `keep <ws>` | Answers a finding: the work goes on, or leave the workspace alone for good |
 | `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Answers a stale review the user edited: discard it and run a fresh review, or keep it and never refresh it |
-| `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes [--unproposed] [--interrupt] [--discard-work]` | Archives a workspace, or deletes one once nothing it would lose is left without the user's yes |
+| `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes [--unproposed] [--interrupt] [--discard-work]` | Archives a workspace, or queues deleting one and returns at once. panopticon carries the deletion through in the background, retrying for up to a day, and reports how it ended in the inbox |
+| `panopticon delete --cancel <ws>`, `panopticon deletions [--json]` | Withdraws a queued deletion, or lists the queued ones and how each stands |
 
 Reading works for Claude Code and Codex workspaces. For anything else, `read` and `screen` say so; tell the user rather than trying another way in.
 
@@ -54,7 +55,7 @@ Use `--peek` when you are only looking and the user hasn't seen the events yet, 
 After the start-of-session steps, keep `panopticon inbox --wait --json` running as a background command for the whole session. Never stop listening unless the user says so. While it runs, ticks post no notifications, so the user hears about events from you. When it returns:
 
 1. Tell the user, in a few lines, what happened and what needs them. Do it in this conversation as soon as it returns, even in the middle of something else. Treat each event as under "The inbox": read a workspace only when its last words don't settle whether the user is needed.
-2. Post a notification only for what needs the user: a question or a turn that needs input, a staged review, a stale review the user edited, a proposal to delete, a deferred item that came back, or a failure they must act on. Run `panopticon notify --title <what happened> --message <one line of context>`, with `--open <link>` when the event has a `link`, and `--activate` otherwise. Everything else gets no notification, such as a turn that finished and asks nothing, or a workspace that stopped.
+2. Post a notification only for what needs the user: a question or a turn that needs input, a staged review, a stale review the user edited, a proposal to delete, a deletion waiting on their answer or one that gave up, a deferred item that came back, or a failure they must act on. Run `panopticon notify --title <what happened> --message <one line of context>`, with `--open <link>` when the event has a `link`, and `--activate` otherwise. Everything else gets no notification, such as a turn that finished and asks nothing, or a workspace that stopped.
 3. Start the next wait right away, in the same turn.
 
 Keep these replies short, to save tokens. If the wait fails because another session already waits, tell the user and don't start it again. Report any other failure and start the wait again.
@@ -202,8 +203,21 @@ Each answer runs as one of these:
 - Defer its item, as described under "Work items", when the work is set aside but must not be lost.
 - `panopticon archive <ws>`: stops it and archives it. It refuses while the agent is working. Pass `--interrupt` only when the user said to stop that turn.
 - `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace: by its number, or named or clearly meant. A general "delete them all" isn't a yes for each one, and you never pass `--yes` on your own. A delete can't be undone. Each of its other flags waives one check, and needs a yes of its own for what that check keeps:
-  - `--unproposed`, for a workspace triage doesn't propose for deletion, or no longer does: one the user asks to delete on their own, one outside the conventions, one whose proposal was withdrawn, or one in a deferred item. Before asking, tell the user that triage didn't propose it and why it would keep it, such as an open PR or recent activity, and what deleting loses: the agent's conversation, and any work not on GitHub, which delete checks for and lists before it deletes anything. For a deferred item's workspace, its summary is already kept. A yes to deleting it after hearing this is the yes for `--unproposed`.
+  - `--unproposed`, for a workspace triage doesn't propose for deletion, or no longer does: one the user asks to delete on their own, one outside the conventions, one whose proposal was withdrawn, or one in a deferred item. Before asking, tell the user that triage didn't propose it and why it would keep it, such as an open PR or recent activity, and what deleting loses: the agent's conversation, and any work not on GitHub, which panopticon checks for and lists before it deletes anything. For a deferred item's workspace, its summary is already kept. A yes to deleting it after hearing this is the yes for `--unproposed`.
   - `--interrupt`, only when the user said to stop the agent's turn, or to drop the messages queued for it.
-  - `--discard-work`, only after delete listed what it found that isn't on GitHub (uncommitted or untracked changes, stashes, commits on no remote branch, entries that aren't repos), you showed that list to the user, and they said yes to losing it. Tell them ignored files, such as a `.env`, are lost too and never listed. Delete starts a stopped or archived workspace to check it, and stops it again if it then refuses. It refuses one it can't read or that holds no repo. For that one, pass it only after the user heard its work couldn't be checked and said yes to losing whatever it holds. Never pass it just to skip the check.
+  - `--discard-work`, only after panopticon listed what it found that isn't on GitHub (uncommitted or untracked changes, stashes, commits on no remote branch, entries that aren't repos), you showed that list to the user, and they said yes to losing it. Tell them ignored files, such as a `.env`, are lost too and never listed. For a deletion parked because the workspace holds no repo, or one that gave up because it couldn't be read, pass it only after the user heard its work couldn't be checked and said yes to losing whatever it holds. Never pass it just to skip the check.
 
-  When it refuses, report why. Ask about the flag that refusal names, if any, and never find another way to delete.
+  `delete` checks right away only what needs no waiting: that the workspace is the user's, and that triage proposes it or the user said yes anyway. When it refuses then, report why and ask about the flag the refusal names, if any. Otherwise it prints that the deletion is queued and returns. Run it once, tell the user it's queued, and move on. panopticon carries it through by itself: it starts a stopped workspace for the check, waits for SSH, waits out a working agent, and retries a dropped connection or a busy Dev Spaces for up to a day. Never run delete again, wait, poll `deletions`, or check the workspace to see how it's going. Running delete again with the same flags changes nothing, and keeps the day the first yes gave it.
+
+  Act only when the inbox says how it ended. Each of these arrives once:
+  - `deleted`: tell the user it's gone.
+  - `deleted-elsewhere`: something else deleted it first, such as a review refresh. Tell the user it's gone. Nothing is left to do.
+  - `deletion-parked`: it waits on the user's answer, and the event says why:
+    - Work that isn't on GitHub, listed in the event: show the list and ask about `--discard-work`.
+    - `~/repositories` holds no repo, so nothing could be checked: tell the user its work couldn't be checked, and ask about `--discard-work` for losing whatever it holds.
+    - Triage no longer proposes it, or it was moved or retitled out of the conventions since the yes: say what changed, and ask about `--unproposed`.
+
+    On a yes, run delete again with that flag, once, and move on as before. On a no, run `panopticon delete --cancel <ws>`.
+  - `deletion-abandoned`: it gave up after a day of failures, or it was cancelled but the workspace panopticon started for the check couldn't be stopped. Report the reason. After giving up, a workspace started for the check is stopped again, unless the event says it was left running. Run delete again only if the user asks.
+
+  Never find another way to delete.
