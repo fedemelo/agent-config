@@ -36,13 +36,14 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon tabs list [--match <url>...]`, `tabs close <url>...` | Chrome's open tabs, or closes the ones the URLs cover |
 | `panopticon triage [--json]` | A briefing per workspace waiting on an answer: its item, title and prompt, status, PRs read from GitHub, last words, and what triage found |
 | `panopticon continue <ws>`, `keep <ws>` | Answers a finding: the work goes on, or leave the workspace alone for good |
+| `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Answers a stale review the user edited: discard it and run a fresh review, or keep it and never refresh it |
 | `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes [--unproposed] [--interrupt] [--discard-work]` | Archives a workspace, or deletes one once nothing it would lose is left without the user's yes |
 
 Reading works for Claude Code and Codex workspaces. For anything else, `read` and `screen` say so; tell the user rather than trying another way in.
 
 ## The inbox
 
-A launchd agent runs `panopticon tick` every minute. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification unless this session listens (see "Listening"). It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
+A launchd agent runs `panopticon tick` every minute. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification unless this session listens (see "Listening"). It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet, and refreshes staged reviews that went stale (see "Stale staged reviews"). The user doesn't need you for the notification; they need you for what to do about it.
 
 Start a session with `panopticon bootstrap --json`, as described under "Bootstrap". Then read the inbox and `items --due`, as described under "Deferred items coming back", and start listening, as described under "Listening". Read the inbox again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
 
@@ -53,7 +54,7 @@ Use `--peek` when you are only looking and the user hasn't seen the events yet, 
 After the start-of-session steps, keep `panopticon inbox --wait --json` running as a background command for the whole session. Never stop listening unless the user says so. While it runs, ticks post no notifications, so the user hears about events from you. When it returns:
 
 1. Tell the user, in a few lines, what happened and what needs them. Do it in this conversation as soon as it returns, even in the middle of something else. Treat each event as under "The inbox": read a workspace only when its last words don't settle whether the user is needed.
-2. Post a notification only for what needs the user: a question or a turn that needs input, a staged review, a proposal to delete, a deferred item that came back, or a failure they must act on. Run `panopticon notify --title <what happened> --message <one line of context>`, with `--open <link>` when the event has a `link`, and `--activate` otherwise. Everything else gets no notification, such as a turn that finished and asks nothing, or a workspace that stopped.
+2. Post a notification only for what needs the user: a question or a turn that needs input, a staged review, a stale review the user edited, a proposal to delete, a deferred item that came back, or a failure they must act on. Run `panopticon notify --title <what happened> --message <one line of context>`, with `--open <link>` when the event has a `link`, and `--activate` otherwise. Everything else gets no notification, such as a turn that finished and asks nothing, or a workspace that stopped.
 3. Start the next wait right away, in the same turn.
 
 Keep these replies short, to save tokens. If the wait fails because another session already waits, tell the user and don't start it again. Report any other failure and start the wait again.
@@ -75,7 +76,20 @@ Then the reviews, from `bootstrap --json`'s `reviews`, in one short block:
 
 - Staged: each PR by its title, with its number of comments, and say its PR is open in a tab (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened, and give those PRs' links instead.
 - Not staged, each PR by its title, with its state in plain words: running, waiting (it runs idle with nothing staged, so it may be asking something; read it), never ran, or stopped without staging.
+- A staged review with `stale` went stale after the user edited it: say what made it stale and ask as under "Stale staged reviews".
+- A not-staged review with `refreshes` is a fresh review replacing one that went stale: say so, with the reason, in the same line.
 - A review that never ran gets a numbered question: "**N.** Start the review of *<PR title>*". A yes runs `panopticon send <ws> --wake -- /stage-review <url>`. A review that stopped without staging can't be read while stopped: say so, and ask in words whether to start it the same way.
+
+## Stale staged reviews
+
+A staged review the user hasn't submitted goes stale once anything happens on its PR: a push, or a comment, review or reply by anyone else. Ticks check every 15 minutes and wait for 30 quiet minutes. Their events:
+
+- "review of *<title>* was stale, a new one is running": the review was untouched, so panopticon discarded it and opened a new `review-<n>` workspace. Report it, with the reason in its context. Nothing to ask.
+- "review of *<title>* is stale, but you edited it": nothing was discarded. It can also come after a refresh started, when the user edited the review before panopticon deleted it. Ask one numbered question: "**N.** Discard your edited review of *<title>* and run a fresh one". Yes runs `panopticon refresh-review <repo>#<n>`: the pending review and the user's edits on it are deleted, and a new review workspace stages a new one from scratch. No runs `panopticon keep-review <repo>#<n>`: the review stays as it is, with the user's edits, and is never refreshed, even if more happens on the PR. Say both under the question, since here a no also acts. If `refresh-review` says there is nothing to do, the review is no longer pending, the PR is closed or a draft, or a tick already refreshed it: say which applies.
+- "couldn't refresh the review of …": a step failed, and the next follow-up tries again. Report the error.
+- "was replaced by a new review but isn't deleted": the user's standing yes (`[reviews] delete_replaced`) let a tick try to delete the old workspace, and a check refused: its agent was working or had messages queued, it holds work that isn't on GitHub, or the user retitled or moved it. It stays proposed for deletion in triage. Report why.
+
+While the standing yes is on, an untouched stale review's old workspace is deleted without asking, so don't ask about it. Without it, or for a review the user edited, triage proposes it as replaced by a newer review, and it needs a yes like any other.
 
 ## Reading a workspace
 
