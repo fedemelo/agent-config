@@ -1,0 +1,5 @@
+interface:
+  display_name: "Check memory pressure"
+  short_description: "Find what is using this Mac's memory and what to close, without changing anything"
+policy:
+  allow_implicit_invocation: true

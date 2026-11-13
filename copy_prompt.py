@@ -41,6 +41,7 @@ NAMED_ONLY = {
     "fact-check-my-review": "FACT-CHECK MY REVIEW GUIDELINES",
     "land": "LAND GUIDELINES",
     "local-review": "LOCAL REVIEW GUIDELINES",
+    "memory-check": "MEMORY CHECK GUIDELINES",
     "open-pr": "OPEN PR GUIDELINES",
     "panopticon": "PANOPTICON GUIDELINES",
     "pr-from-review": "PR FROM REVIEW GUIDELINES",
