@@ -1,0 +1,5 @@
+interface:
+  display_name: "Stage a review"
+  short_description: "Put a local review's comments on the PR as a pending review"
+policy:
+  allow_implicit_invocation: false
