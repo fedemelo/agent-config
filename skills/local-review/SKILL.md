@@ -1,6 +1,6 @@
 ---
 name: local-review
-description: Reviews a GitHub PR as a staff engineer and returns numbered, categorized comments plus an APPROVE, COMMENT, or REQUEST CHANGES verdict in this session, without posting to the PR or changing code. Takes an optional PR number or URL (defaulting to the current branch's PR) and optional ticket context to check the PR fixes it. Use when asked to review a PR locally or without publishing comments.
+description: Reviews a GitHub PR as a staff engineer and returns numbered, categorized comments, replies to any answers to the user's earlier comments, and an APPROVE, COMMENT, or REQUEST CHANGES verdict in this session, without posting to the PR or changing code. Takes an optional PR number or URL (defaulting to the current branch's PR) and optional ticket context to check the PR fixes it. Use when asked to review a PR locally or without publishing comments.
 disallowed-tools: Edit Write NotebookEdit
 audience: others
 ---
@@ -34,18 +34,23 @@ git fetch origin pull/<n>/head        # <n>: the number from the metadata above
 git show FETCH_HEAD:<path>
 ```
 
-3. Read every point another reviewer already made, human or bot, so you never repeat one:
+3. Read the PR's whole history: every point anyone made, human or bot, the user's own earlier comments, and every answer to each.
 
 ```sh
+gh api user --jq .login               # which comments are the user's
 git review-feedback <pr> --all
 ```
 
-`--all` because a resolved thread still records a point somebody made, and repeating it is
-exactly what this step is for. The output covers all three places feedback lives: inline threads,
-the body of every submitted review, and conversation comments. A review body is the one most
-easily missed, since nothing about it looks like a comment. If `git-review-feedback` is not
-installed, report that rather than rebuilding it out of raw `gh`
-calls, which would leave you repeating a point already made somewhere you did not look.
+`--all` because a resolved thread still records a point somebody made. The output covers all
+three places feedback lives: inline threads, the body of every submitted review, and conversation
+comments. A review body is the one most easily missed, since nothing about it looks like a
+comment. If `git-review-feedback` is not installed, report that rather than rebuilding it out of
+raw `gh` calls, which would miss whatever lives somewhere you did not look.
+
+The review builds on that history, so it never reads as if the user hadn't been there before:
+
+1. Never repeat a point anyone already made. When one still holds because it was never fixed, the comment says so and links the earlier one.
+2. Every answer to one of the user's comments gets a reply, under "Replies" below.
 
 ## Does it fix the ticket? (only when ticket context is provided)
 
@@ -113,6 +118,21 @@ The same finding, postable:
 Everything dropped was true: the page count, the character limit, the name of the error, the helper and the file it lives in, and the two dashes holding the sentences together. None of it changes what the author does next, and all of it belongs in the reasoning above.
 
 Comment on every detail, however minor, even when the verdict is APPROVE.
+
+## Replies
+
+After the comments, continue the numbering with one reply for each of the user's comments that someone answered and the user hasn't answered since:
+
+```
+7.
+Reply to: <URL of the last comment in that thread>
+Category: <only when the answer doesn't settle the point: the category it would get as a new comment>
+Reasoning: <what the user said, what came back, and what the code at head shows>
+
+Reply: <the reply as it will be posted>
+```
+
+When the answer settles the point, the reply is a short agreement. When it doesn't, or when the fix it describes is missing or wrong in the code at head, the reply answers it for real. Either way it follows the same rules as a comment, and an unsettled one counts toward the verdict like a comment of its category.
 
 ## Categories
 
