@@ -32,7 +32,7 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon tabs list [--match <url>...]`, `tabs close <url>...` | Chrome's open tabs, or closes the ones the URLs cover |
 | `panopticon triage [--json]` | A briefing per workspace waiting on an answer: its item, title and prompt, status, PRs read from GitHub, last words, and what triage found |
 | `panopticon continue <ws>`, `keep <ws>` | Answers a finding: the work goes on, or leave the workspace alone for good |
-| `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes` | Archives a workspace, or deletes one proposed for deletion |
+| `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes [--unproposed] [--interrupt] [--discard-work]` | Archives a workspace, or deletes one once nothing it would lose is left without the user's yes |
 
 Reading works for Claude Code and Codex workspaces. For anything else, `read` and `screen` say so; tell the user rather than trying another way in.
 
@@ -154,6 +154,9 @@ Each answer runs as one of these:
 - `panopticon keep <ws>`: leave it as it is. Triage won't propose anything for it again.
 - Defer its item, as described under "Work items", when the work is set aside but must not be lost.
 - `panopticon archive <ws>`: stops it and archives it. It refuses while the agent is working. Pass `--interrupt` only when the user said to stop that turn.
-- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace: by its number, or named or clearly meant. A general "delete them all" isn't a yes for each one, and you never pass `--yes` on your own. A delete can't be undone, and it takes everything in the workspace that wasn't pushed. It refuses unless the workspace is still proposed for deletion for a reason that holds now. When it refuses, report why rather than finding another way.
+- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace: by its number, or named or clearly meant. A general "delete them all" isn't a yes for each one, and you never pass `--yes` on your own. A delete can't be undone. Each of its other flags waives one check, and needs a yes of its own for what that check keeps:
+  - `--unproposed`, for a workspace triage doesn't propose for deletion, or no longer does: one the user asks to delete on their own, one outside the conventions, one whose proposal was withdrawn, or one in a deferred item. Before asking, tell the user that triage didn't propose it and why it would keep it, such as an open PR or recent activity, and what deleting loses: the agent's conversation, and any work not on GitHub, which delete checks for and lists before it deletes anything. For a deferred item's workspace, its summary is already kept. A yes to deleting it after hearing this is the yes for `--unproposed`.
+  - `--interrupt`, only when the user said to stop the agent's turn, or to drop the messages queued for it.
+  - `--discard-work`, only after delete listed what it found that isn't on GitHub (uncommitted or untracked changes, stashes, commits on no remote branch, entries that aren't repos), you showed that list to the user, and they said yes to losing it. Tell them ignored files, such as a `.env`, are lost too and never listed. Delete starts a stopped or archived workspace to check it, and stops it again if it then refuses. It refuses one it can't read or that holds no repo. For that one, pass it only after the user heard its work couldn't be checked and said yes to losing whatever it holds. Never pass it just to skip the check.
 
-A workspace whose item is deferred is never proposed for deletion. Never offer to delete one.
+  When it refuses, report why. Ask about the flag that refusal names, if any, and never find another way to delete. A refusal after delete started the workspace may say the next run needs `--unproposed`, since starting it can reset its rest. Ask for that yes too, saying why it's needed.
