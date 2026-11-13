@@ -21,7 +21,7 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon screen <ws> [--lines <n>]` | The bottom of the agent's terminal |
 | `panopticon send <ws> [--wake] -- <message>` | Queues a message. With no message, it reads stdin |
 | `panopticon inbox [--peek]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words, plus what the GitHub rules did. Marks them read unless `--peek` |
-| `panopticon items` | The user's work items by state |
+| `panopticon items [--due] [--json]` | The user's work items by state. `--due` lists only the deferred items that wait on the user. `--json` gives each item's links, workspaces, summary, blocker, pick-up and why it waits, if it does |
 | `panopticon item show <item>` | One item as markdown: links, workspaces, state, summary |
 | `panopticon item new`, `item edit <item>` | Add an item by hand, or edit one in `$EDITOR` |
 | `panopticon open <item>` | Opens the item's links in the browser |
@@ -30,7 +30,7 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | `panopticon resume <item> [--group <g>]` | Creates a workspace seeded with a deferred item's summary, and opens its links |
 | `panopticon rules check` | What each GitHub rule would do now, without doing it |
 | `panopticon tabs list [--match <url>...]`, `tabs close <url>...` | Chrome's open tabs, or closes the ones the URLs cover |
-| `panopticon triage` | The workspaces waiting on an answer, with what triage found |
+| `panopticon triage [--json]` | A briefing per workspace waiting on an answer: its item, title and prompt, status, PRs read from GitHub, last words, and what triage found |
 | `panopticon continue <ws>`, `keep <ws>` | Answers a finding: the work goes on, or leave the workspace alone for good |
 | `panopticon archive <ws> [--interrupt]`, `delete <ws> --yes` | Archives a workspace, or deletes one proposed for deletion |
 
@@ -38,9 +38,9 @@ Reading works for Claude Code and Codex workspaces. For anything else, `read` an
 
 ## The inbox
 
-A launchd agent runs `panopticon tick` every minute in the user's active hours. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
+A launchd agent runs `panopticon tick` every minute in the user's active hours. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
 
-Start a session by reading the inbox, and read it again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
+Start a session by reading the inbox and `items --due`, as described under "Deferred items coming back". Read the inbox again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
 
 Use `--peek` when you are only looking and the user hasn't seen the events yet, so they stay for the next read.
 
@@ -85,7 +85,7 @@ A failed `status` is an error to report, never a sign that the turn ended. When 
 
 ## Work items
 
-A work item is the record of one piece of the user's work: its links, its workspaces, its state, and, once deferred, a summary. Workspaces and tabs are views of it that can be closed and opened again. When the user asks what they're working on, start from `items`, not from `ls`.
+A work item is the record of one piece of the user's work: its links, its workspaces, its state, and, once deferred, a summary. Workspaces and tabs are views of it that can be closed and opened again. When the user asks what they're working on, start from `items --json`, not from `ls`.
 
 Deferring is where you do the work the CLI never does. When the user wants to set an item aside:
 
@@ -95,6 +95,16 @@ Deferring is where you do the work the CLI never does. When the user wants to se
 4. Only then call `defer`, passing the summary on stdin with a quoted heredoc, and the blocker and pick-up with `--blocker` and `--pick-up`.
 
 A deferred item's workspaces may then be archived, or deleted with the user's yes. Its summary is what lasts, so never defer without one the user approved.
+
+### Deferred items coming back
+
+A tick brings a deferred item back to the inbox when its pick-up date passes, or when every PR its blocker or pick-up names is merged or closed. The item stays deferred until the user resumes it, marks it done, or defers it again. `items --due` lists the deferred items that wait on the user, and `items --json` gives the same reason in `waiting`:
+
+- `due` and `unblocked`: it came back. Bring these up every session, until the user answers.
+- `check-failed`: the last check couldn't read a PR it waits on.
+- `by-hand`: no tick can check its pick-up or blocker, such as "when Mastra comes up again".
+
+Ask about the `check-failed` and `by-hand` ones about once a week, not every session. Keep the date you last asked in `~/.local/state/panopticon-skill/due-asked-on`, and ask once it is seven days old or missing. For each one, give its title, blocker and pick-up, and ask whether to resume it, mark it done, or leave it deferred.
 
 `done` and `resume` change the item's state, and `resume` creates a workspace. `defer` and `done` also close the Chrome tabs of the item's specific links, unless given `--keep-tabs`. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.
 
@@ -109,24 +119,24 @@ The GitHub rules live in `~/.config/panopticon/config.toml`. Never add or change
 Every 15 minutes in the user's active hours, a tick checks each workspace and records at most one finding for it. A finding is one of three kinds:
 - **Rested**: idle or stopped for an hour with nothing queued.
 - **Stale**: no activity for 14 days, but it still has an open PR.
-- **Proposed for deletion**: its item is done, its PRs are merged or closed, you approved the review, a newer review replaced it, or it has had no activity for 14 days and has no open PR.
+- **Proposed for deletion**: its item is done, its linked PRs are merged or closed, you approved the review, a newer review replaced it, or it has had no activity for 14 days and has no open PR.
 
 Each finding arrives once in the inbox. A tick never acts on one.
 
-When the user asks what needs them, run `panopticon triage` for the list, and the inbox for what's new.
+When the user asks what needs them, run `panopticon triage --json` for the list, and the inbox for what's new.
 
 ### Briefing
 
-The user decides from your briefing alone, so it must hold everything they need. A workspace name like `goofy-deer-ppuv` means nothing to them, and neither does a bare PR number. Either one sends them off to look it up, which is the work this skill exists to save.
+The user decides from your briefing alone, so it must hold everything they need. `triage --json` has most of it, so brief from that rather than reading each workspace. A workspace name like `goofy-deer-ppuv` means nothing to them, and neither does a bare PR number. Either one sends them off to look it up, which is the work this skill exists to save.
 
 - Group the workspaces by work item, and name the item.
 - For each workspace, say in plain words what it was doing. Take this from its title and starting prompt, not from its name.
-- Name each PR by its title, its state and when that changed: "*archive reference documents beside an order* (#65873), merged yesterday". Get them from `gh pr view`, never from `references`, which can be out of date.
-- Say where the agent left off, in a line, from what it last said. Use `panopticon read` on a running workspace. A stopped one would have to be woken to read it, so wake it only when the user agreed to that.
+- Name each PR by its title, its state and when that changed: "*archive reference documents beside an order* (#65873), merged yesterday". A PR marked as only mentioned is context from the title or prompt, not the workspace's own, so say which it is. A PR shown with an error couldn't be read: say so rather than guess its state.
+- Say where the agent left off, in a line, from its last words. Use `panopticon read` only when they are missing or don't settle it, and only on a running workspace. A stopped one would have to be woken to read it, so wake it only when the user agreed to that.
 - Say why triage flagged it, and what you'd do.
 - Put the workspace name last, as a reference, never as the way to identify it.
 
-Before you trust a finding, check it. Triage can be wrong. A workspace proposed for deletion for having no open PR may name its PR only as `#<n>` in its title or prompt. Look it up, and say so when a finding is wrong.
+Triage can be wrong. When the briefing doesn't fit the finding, check it, and say so when a finding is wrong.
 
 ### Decisions
 
