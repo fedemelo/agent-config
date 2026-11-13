@@ -130,9 +130,9 @@ Before you trust a finding, check it. Triage can be wrong. A workspace proposed 
 
 ### Decisions
 
-Give every binary decision a letter: A, B, C and so on, in one run through the whole briefing. Each letter is one action on one workspace or item, stated so that "yes" means do it: "**A.** Delete the drawings fix workspace". Something that isn't a yes-or-no choice gets no letter. Ask about it in words.
+Give every binary decision a number: 1, 2, 3 and so on, in one run through the whole briefing. Each number is one action on one workspace or item, stated so that "yes" means do it: "**1.** Delete the drawings fix workspace". Under it, say what yes and what no each mean in practice: what changes, what's lost, what it costs. Something that isn't a yes-or-no choice gets no number. Ask about it in words.
 
-The user answers with the letters they want, such as "A, C, F". Each letter named is a yes to that action. Each letter left out is a no, so that action doesn't happen and nothing else changes. A letter named counts as the user's yes for that one workspace, deletes included, since each one was shown on its own. A reply that isn't only letters is read as words. When it's unclear, ask before acting.
+The user answers with the numbers they want, such as "1, 3, 6". Each number named is a yes to that action. Each number left out is a no, so that action doesn't happen and nothing else changes. A number named counts as the user's yes for that one workspace, deletes included, since each one was shown on its own. A reply that isn't only numbers is read as words. When it's unclear, ask before acting.
 
 Then run the actions the user chose, one workspace at a time, and report each result. Stop and report the first one that fails.
 
@@ -144,6 +144,6 @@ Each answer runs as one of these:
 - `panopticon keep <ws>`: leave it as it is. Triage won't propose anything for it again.
 - Defer its item, as described under "Work items", when the work is set aside but must not be lost.
 - `panopticon archive <ws>`: stops it and archives it. It refuses while the agent is working. Pass `--interrupt` only when the user said to stop that turn.
-- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace: by its letter, or named or clearly meant. A general "delete them all" isn't a yes for each one, and you never pass `--yes` on your own. A delete can't be undone, and it takes everything in the workspace that wasn't pushed. It refuses unless the workspace is still proposed for deletion for a reason that holds now. When it refuses, report why rather than finding another way.
+- `panopticon delete <ws> --yes`: only after the user said yes to deleting that workspace: by its number, or named or clearly meant. A general "delete them all" isn't a yes for each one, and you never pass `--yes` on your own. A delete can't be undone, and it takes everything in the workspace that wasn't pushed. It refuses unless the workspace is still proposed for deletion for a reason that holds now. When it refuses, report why rather than finding another way.
 
 A workspace whose item is deferred is never proposed for deletion. Never offer to delete one.
