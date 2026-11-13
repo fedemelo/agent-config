@@ -81,7 +81,7 @@ You read that file rather than handing its path to the agent that needs it. addr
 
 6. Confirm the pass left the working tree clean, with `git status --porcelain` empty. It owes you a tree with nothing of its own left in it, so anything there means the pass broke its contract: stop, report it, and change nothing yourself.
 
-7. If the pass reported a blocking question, the cycle stops there. Put the question to the user with AskUserQuestion, naming the point id and quoting the finding it came from. Send the answer to that same agent with SendMessage, so it still has the work it had done, and let it finish before you go on. Never answer for the user and never guess: the pass asked because the code did not settle it.
+7. If the pass reported a blocking question, the cycle stops there. Put the question to the user with AskUserQuestion, naming the point id and quoting the finding it came from. Open the message you write before it with the line `Outcome: stopped with a question in round <n>`, as "What to report" describes, since the run may sit waiting there for hours. Send the answer to that same agent with SendMessage, so it still has the work it had done, and let it finish before you go on. Never answer for the user and never guess: the pass asked because the code did not settle it.
 
 8. Confirm the push landed before the next round, by checking the local head against `gh pr view <pr> --json headRefOid`. A round spent reviewing an unpushed fix reviews the same code twice.
 
@@ -108,6 +108,19 @@ Then confirm the working tree is clean and the push landed, exactly as after an 
 One case skips it. If an addressing pass broke the clean-tree contract, the run is already stopped and stays stopped: a comment pass would commit on top of a tree holding changes that are not yours.
 
 ## What to report
+
+The report opens with one line that says how the run ended. Nothing comes before it, and it has no formatting. It takes exactly one of these forms, with the round as a number:
+
+```
+Outcome: approved in round <n>
+Outcome: not approved after <n> rounds
+Outcome: stopped with a question in round <n>
+Outcome: stopped early
+```
+
+An approval in any round is the first. COMMENT or REQUEST CHANGES in round 3 is the second. A blocking question is the third. Anything else that ends the run without an approval is the fourth: a check before the first round that fails, a pass that breaks the clean tree, or the single pass when reviewers were already on the PR and its review didn't approve. panopticon reads this line without a model, and it keeps only the start of the reply, so the line goes first.
+
+Then:
 
 1. Every round's verdict, in order, and where the run stopped: an approval, three rounds spent, a blocking question, or a contract broken.
 2. Every reply that came back, by round and point id, verbatim, for the user to post. These are the replies themselves, not a summary of them.
