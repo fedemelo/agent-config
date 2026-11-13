@@ -15,14 +15,16 @@ Everything goes through the `panopticon` CLI. If `command -v panopticon` finds n
 | Command | What it does |
 | --- | --- |
 | `panopticon bootstrap [--json]` | Whether a bootstrap is due and why, the workspaces it would wake, those left asleep and why, and how the reviews stand. Changes nothing |
-| `panopticon bootstrap run [--wake <ws>...] [--over-the-cap]` | Wakes the workspaces named and reads their last words, and opens each staged review's Files changed tab. Prints what it did as JSON |
+| `panopticon bootstrap run [--wake <ws>...] [--over-the-cap]` | Wakes the workspaces named and reads their last words, and opens each staged review's PR. Prints what it did as JSON |
 | `panopticon ls [--group <g>]` | The user's workspaces, grouped: name, status, agent status, group, repo, title |
 | `panopticon status <ws>` | One workspace as JSON, including `agentStatusChangedAt` |
 | `panopticon read <ws> [--transcript <path>] [--records <n>]` | The conversation text of the newest transcript, or of the one named. Prints the path it chose on stderr |
 | `panopticon transcripts <ws>` | Every transcript path, newest first |
 | `panopticon screen <ws> [--lines <n>]` | The bottom of the agent's terminal |
 | `panopticon send <ws> [--wake] -- <message>` | Queues a message. With no message, it reads stdin |
-| `panopticon inbox [--peek]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words, plus what the GitHub rules did. Marks them read unless `--peek` |
+| `panopticon inbox [--peek] [--json]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words, plus what the GitHub rules did. Marks them read unless `--peek` |
+| `panopticon inbox --wait [--json]` | Waits until there are unread events, then 20 seconds more for those that come with them, and prints them as `inbox` does. While it waits, ticks post no notifications. Only one can wait at a time |
+| `panopticon notify --title <t> --message <m> [--open <url> \| --activate]` | Posts a macOS notification that opens the link, or brings the user's terminal to the front, when clicked |
 | `panopticon items [--due] [--json]` | The user's work items by state. `--due` lists only the deferred items that wait on the user. `--json` gives each item's links, workspaces, summary, blocker, pick-up and why it waits, if it does |
 | `panopticon item show <item>` | One item as markdown: links, workspaces, state, summary |
 | `panopticon item new`, `item edit <item>` | Add an item by hand, or edit one in `$EDITOR` |
@@ -40,11 +42,21 @@ Reading works for Claude Code and Codex workspaces. For anything else, `read` an
 
 ## The inbox
 
-A launchd agent runs `panopticon tick` every minute. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification. It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
+A launchd agent runs `panopticon tick` every minute. Each tick compares every workspace with the last one, adds what changed to the inbox, and shows a macOS notification unless this session listens (see "Listening"). It also runs the GitHub rules in the user's config: a review request opens a `review-<n>` workspace, and a review on one of the user's PRs is reported. A rule that fails adds an event with the error. A deferred item that comes back adds an event too. A tick also warns before Dev Spaces removes an archived workspace whose item has no summary yet. The user doesn't need you for the notification; they need you for what to do about it.
 
-Start a session with `panopticon bootstrap --json`, as described under "Bootstrap". Then read the inbox and `items --due`, as described under "Deferred items coming back". Read the inbox again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
+Start a session with `panopticon bootstrap --json`, as described under "Bootstrap". Then read the inbox and `items --due`, as described under "Deferred items coming back", and start listening, as described under "Listening". Read the inbox again whenever the user asks what's new or what needs them. For each event, say what happened and what the agent last said, and read the workspace further only when that line doesn't settle whether the user is needed. An event is a pointer, not a verdict: `finished` means the agent went idle, which can still be a question waiting.
 
 Use `--peek` when you are only looking and the user hasn't seen the events yet, so they stay for the next read.
+
+## Listening
+
+After the start-of-session steps, keep `panopticon inbox --wait --json` running as a background command for the whole session. Never stop listening unless the user says so. While it runs, ticks post no notifications, so the user hears about events from you. When it returns:
+
+1. Tell the user, in a few lines, what happened and what needs them. Do it in this conversation as soon as it returns, even in the middle of something else. Treat each event as under "The inbox": read a workspace only when its last words don't settle whether the user is needed.
+2. Post a notification only for what needs the user: a question or a turn that needs input, a staged review, a proposal to delete, a deferred item that came back, or a failure they must act on. Run `panopticon notify --title <what happened> --message <one line of context>`, with `--open <link>` when the event has a `link`, and `--activate` otherwise. Everything else gets no notification, such as a turn that finished and asks nothing, or a workspace that stopped.
+3. Start the next wait right away, in the same turn.
+
+Keep these replies short, to save tokens. If the wait fails because another session already waits, tell the user and don't start it again. Report any other failure and start the wait again.
 
 ## Bootstrap
 
@@ -61,7 +73,7 @@ Brief from `triage --json`, as under "Briefing". Every woken workspace now has l
 
 Then the reviews, from `bootstrap --json`'s `reviews`, in one short block:
 
-- Staged: each PR by its title, with its number of comments, and say its Files changed tab is open (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened, and give those PRs' Files changed links instead.
+- Staged: each PR by its title, with its number of comments, and say its PR is open in a tab (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened, and give those PRs' links instead.
 - Not staged, each PR by its title, with its state in plain words: running, waiting (it runs idle with nothing staged, so it may be asking something; read it), never ran, or stopped without staging.
 - A review that never ran gets a numbered question: "**N.** Start the review of *<PR title>*". A yes runs `panopticon send <ws> --wake -- /stage-review <url>`. A review that stopped without staging can't be read while stopped: say so, and ask in words whether to start it the same way.
 
@@ -96,7 +108,7 @@ A successful send means queued, not delivered or done. Never send again because 
 
 ## Waiting on a turn
 
-The inbox already reports every finished turn, within a minute. When the user asks to hear when a workspace is done, tell them the notification will come, and wait yourself only when they want the result in this session. In that case, take `agentStatusChangedAt` from `status` right before sending, or right away if nothing is being sent. Then poll `status` every 15 seconds in a background command, until one of these:
+The inbox already reports every finished turn, within a minute. When the user asks to hear when a workspace is done, tell them you'll hear it from the inbox, and wait yourself only when they want the result in this session. In that case, take `agentStatusChangedAt` from `status` right before sending, or right away if nothing is being sent. Then poll `status` every 15 seconds in a background command, until one of these:
 
 - `status` isn't `running`. The workspace stopped, and that is not a finished turn: say so.
 - `agentStatusChangedAt` differs from the one you took and `agentStatus` isn't `working`. A turn ended. `idle` can still mean a question or an approval is waiting, so read the workspace before you call it done, and never call it a success without reading it.
