@@ -27,7 +27,7 @@ Nothing in the list means nothing is waiting on you. Say so and stop; do not ope
 One space each, and never a review in this one. Load the [[side-session]] skill and open, list and delete spaces by it. Before opening anything, clear out finished reviews as the next section says, so the skip check below never sees a space that is about to go.
 
 - **Name it `review-<n>`**, for PR number `<n>`. Keep the shape exactly: it is what you see on the tab, and what the skip and cleanup steps read back.
-- **Seed it with `/local-review <url>`** and nothing else, so the review is running when you arrive. Never `/review-loop`, which addresses and pushes; the review is yours to act on.
+- **Seed it with `/stage-review <url>`** and nothing else, so the review is running when you arrive and its comments are waiting on the PR as a pending review. Never `/review-loop`, which addresses and pushes; the review is yours to act on.
 - **The target is the PR's `url`, not its number**, since a pasted or attached space cannot be assumed to sit in this repo.
 - **Skip any PR that already has a `review-<n>` space**, so running this again opens only what is new. A second space would be a duplicate, and the one already there may hold a review you haven't read. A PR skipped this way still gets a line in the report.
 
@@ -61,6 +61,6 @@ No table: one block per PR, in the same newest-first order as the list, and noth
 
 Below the blocks, list the workspaces you deleted, one line each with the PR number and the reason (merged, or approved by you), and then the spaces you named for the user to delete.
 
-Where side-session opened nothing, report the list as the command printed it, then the `/local-review` lines to paste, and say that the cleanup does not apply.
+Where side-session opened nothing, report the list as the command printed it, then the `/stage-review` lines to paste, and say that the cleanup does not apply.
 
 Nothing about any PR's contents, either way: you have not read one.
