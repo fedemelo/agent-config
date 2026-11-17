@@ -4,7 +4,7 @@ Implementation notes for agents working on this repo. `README.md` is for humans 
 
 ## Layout
 
-- `skills/<name>/SKILL.md`, with `agents/openai.yaml` beside it for Codex. A skill that routes on the environment also has a `targets/` directory.
+- `skills/<name>/SKILL.md`, with `agents/openai.yaml` beside it for Codex. A skill that routes on the environment also has a `targets/` directory. `panopticon` keeps its workflows in `workflows/`, each read only when the task calls for it, so the long-lived session loads only what it uses.
 - `hooks/`: `PreToolUse` hooks. `_pretooluse.py` reads the payload and answers the harness; each hook imports it as a sibling and holds only its own decision.
 - `install.sh`, `merge_settings.py`, `settings.json.example`: the installer for an owned machine.
 - `scripts/validate_skills.py`: the packaging validator, run in CI.
@@ -76,7 +76,7 @@ The installer checks that every hook named in the file exists. The validator che
 - every `audience: others` skill reaches the prose standard
 - no skill references one that is missing where it runs
 - no routing skill is scoped to one environment
-- a routing skill and its `targets/` directory list the same files
+- a skill and its `targets/` and `workflows/` directories list the same files
 - every hook in `hooks/` is registered in `settings.json.example`
 - `copy_prompt.py` can title every skill
 - the plugin manifests stay accurate
