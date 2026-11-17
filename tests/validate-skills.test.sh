@@ -273,6 +273,23 @@ check "a target nothing routes to is caught" \
   "$(reports "$d" "side-session: targets/cloud.md exists but the skill never routes to it")" "1"
 rm -rf "$d"
 
+# A long-lived skill's workflows are indexed the same way, by the body that loads them.
+echo "=== a skill and its workflows have to agree on which files exist ==="
+d=$(fixture)
+mv "$d/skills/panopticon/workflows/triage.md" "$d/skills/panopticon/workflows/findings.md"
+check "a workflow the skill still loads but renamed on disk is caught" \
+  "$(reports "$d" "panopticon: routes to workflows/triage.md, which does not exist")" "1"
+check "and the orphan the rename left is caught too" \
+  "$(reports "$d" "panopticon: workflows/findings.md exists but the skill never routes to it")" "1"
+check "and it fails" "$(status "$d")" "1"
+rm -rf "$d"
+
+d=$(fixture)
+printf 'x\n' > "$d/skills/panopticon/workflows/standup.md"
+check "a workflow nothing loads is caught" \
+  "$(reports "$d" "panopticon: workflows/standup.md exists but the skill never routes to it")" "1"
+rm -rf "$d"
+
 # A router scoped to one environment is missing from the very environment it was meant to
 # identify, and nothing is left there to read its routing table and say so.
 echo "=== a skill that routes on the environment has to be installed in all of them ==="

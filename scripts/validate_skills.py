@@ -50,9 +50,11 @@ ENVIRONMENT_TARGETS = tuple(value for value in ENVIRONMENT_VALUES if value != EN
 # The skill holding the detection rule. Referencing it is what makes a skill a router.
 ENVIRONMENT_SKILL = "environment"
 
-# A skill that routes reaches its per-environment procedures as `targets/<name>.md`, and its own
-# body is the only index of them.
-TARGET_REFERENCE = re.compile(r"`targets/([a-z0-9-]+\.md)`")
+# A skill reaches the files it loads on demand as `<directory>/<name>.md`, and its own body is the
+# only index of them: `targets/` for the per-environment procedures of a skill that routes, and
+# `workflows/` for the parts of a long-lived skill it reads only when a task calls for one.
+INDEXED_DIRECTORIES = ("targets", "workflows")
+INDEXED_REFERENCE = re.compile(rf"`({'|'.join(INDEXED_DIRECTORIES)})/([a-z0-9-]+\.md)`")
 
 # Values our YAML never uses. Rejecting them keeps the hand-rolled parser below honest: a file
 # reaching for a real YAML feature fails loudly instead of being read as something else.
@@ -388,7 +390,7 @@ def check_skill(path, name, skills, explicit, renderable, audiences, environment
         environments[name] = ENVIRONMENT_ANY
         errors.append(f"{name}: {ENVIRONMENT_KEY} must be one of {', '.join(ENVIRONMENT_VALUES)}, not {environment!r}")
 
-    check_targets(path, name, text, errors)
+    check_indexed_files(path, name, text, errors)
     check_router_scope(path, name, environments[name], text, errors)
     check_policy(path, name, name in explicit, frontmatter, errors)
 
@@ -411,21 +413,23 @@ def check_spec_limits(name, description, body, errors):
         )
 
 
-def check_targets(path, name, text, errors):
-    """A routing skill and its targets/ directory have to agree on which files exist.
+def check_indexed_files(path, name, text, errors):
+    """A skill and the files it loads on demand have to agree on which files exist.
 
-    The body is the only index: nothing else lists them, so a target renamed on disk leaves the
-    skill routing to a path that is not there, and one the body stopped naming is read by nobody.
-    Both fail silently, in the environment nobody tested.
+    The body is the only index: nothing else lists them, so a file renamed on disk leaves the
+    skill pointing at a path that is not there, and one the body stopped naming is read by nobody.
+    Both fail silently, in the environment or the task nobody tested.
     """
-    directory = path / "targets"
-    named = set(TARGET_REFERENCE.findall(text))
-    present = {file.name for file in directory.glob("*.md")} if directory.is_dir() else set()
+    named = set(INDEXED_REFERENCE.findall(text))
+    for directory in INDEXED_DIRECTORIES:
+        folder = path / directory
+        present = {(directory, file.name) for file in folder.glob("*.md")} if folder.is_dir() else set()
+        wanted = {entry for entry in named if entry[0] == directory}
 
-    for missing in sorted(named - present):
-        errors.append(f"{name}: routes to targets/{missing}, which does not exist")
-    for unused in sorted(present - named):
-        errors.append(f"{name}: targets/{unused} exists but the skill never routes to it")
+        for _, missing in sorted(wanted - present):
+            errors.append(f"{name}: routes to {directory}/{missing}, which does not exist")
+        for _, unused in sorted(present - wanted):
+            errors.append(f"{name}: {directory}/{unused} exists but the skill never routes to it")
 
 
 def check_router_scope(path, name, scope, text, errors):
