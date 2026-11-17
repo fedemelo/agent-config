@@ -43,6 +43,10 @@ These are the commands this file covers. Each command a workflow owns is describ
 | `panopticon inbox [--peek] [--json]` | What changed since the inbox was last read: turns that finished or need attention, workspaces that stopped or went away, each with the agent's last words, plus what the GitHub rules did. Marks them read unless `--peek` |
 | `panopticon inbox --wait [--json]` | Waits until there are unread events, then 20 seconds more for those that come with them, and prints them as `inbox` does. While it waits, ticks post no notifications. Only one can wait at a time |
 | `panopticon notify --title <t> --message <m> [--open <url> \| --activate]` | Posts a macOS notification that opens the link, or brings the user's terminal to the front, when clicked |
+| `panopticon decisions [--json] [--count]` | The open decisions, oldest first, each with its number, what it is about, its question, and what yes and no run (see "Decisions") |
+| `panopticon ask --about <x> --kind <k> --question <q> --yes <y> --no <n>` | Opens a decision, or rewords the open one with the same `--about` and `--kind`. Prints its number |
+| `panopticon answer <n> yes\|no [<n> yes\|no]...` | Records the user's answers, all or none. It only records: you still act on them |
+| `panopticon decisions close <n>` | Closes a decision that no longer needs an answer |
 | `panopticon rules check` | What each GitHub rule would do now, without doing it |
 | `panopticon tabs list [--match <url>...]`, `tabs close <url>...` | Chrome's open tabs, or closes the ones the URLs cover |
 
@@ -60,7 +64,7 @@ Use `--peek` when you are only looking and the user hasn't seen the events yet, 
 
 After the start-of-session steps, keep `panopticon inbox --wait --json` running as a background command for the whole session. Never stop listening unless the user says so. While it runs, ticks post no notifications, so the user hears about events from you. When it returns:
 
-1. Tell the user, in a few lines, what happened and what needs them. Do it in this conversation as soon as it returns, even in the middle of something else. Treat each event as under "The inbox": read a workspace only when its last words don't settle whether the user is needed.
+1. Tell the user, in a few lines, what happened and what needs them. Do it in this conversation as soon as it returns, even in the middle of something else. Treat each event as under "The inbox": read a workspace only when its last words don't settle whether the user is needed. Run `panopticon decisions --json` and name only the decisions opened since your last message, as under "Decisions".
 2. Post a notification only for what needs the user: a question or a turn that needs input, a staged review, a stale review the user edited, a proposal to delete, a deletion waiting on their answer or one that gave up, review rounds that ended without an approval or with a question, a deferred item that came back, or a failure they must act on. Run `panopticon notify --title <what happened> --message <one line of context>`, with `--open <link>` when the event has a `link`, and `--activate` otherwise. Everything else gets no notification, such as a turn that finished and asks nothing, or a workspace that stopped.
 3. Start the next wait right away, in the same turn.
 
@@ -105,11 +109,13 @@ The user decides from what you tell them, so it must hold everything they need. 
 
 ## Decisions
 
-Give every binary decision a number: 1, 2, 3 and so on, in one run through the whole briefing. Each number is one action on one workspace or item, stated so that "yes" means do it: "**1.** Delete the drawings fix workspace". Under it, say what yes and what no each mean in practice: what changes, what's lost, what it costs. Something that isn't a yes-or-no choice gets no number. Ask about it in words.
+Every yes-or-no decision lives in panopticon under a number it keeps until it closes, and no number is ever given twice. panopticon opens many itself, in the tick that records them: a triage finding, a deletion parked on the user's answer, a stale review the user edited, review rounds that ended without an approval or with a question, and a deferred item that came back. `panopticon decisions --json` lists the open ones with what yes and no each run. To ask anything else, run `panopticon ask --about <ws, owner/repo#n or item id> --kind <slug> --question <q> --yes <what yes does> --no <what no does>`, which prints the number. Asking again with the same `--about` and `--kind` rewords the open one and keeps its number. Something that isn't a yes-or-no choice gets no decision. Ask about it in words.
 
-The user answers with the numbers they want, such as "1, 3, 6". Each number named is a yes to that action. Each number left out is a no, so that action doesn't happen and nothing else changes. A number named counts as the user's yes for that one workspace, deletes included, since each one was shown on its own. A reply that isn't only numbers is read as words. When it's unclear, ask before acting.
+Never repeat an open decision in the conversation. Each message names only the decisions opened since your last message: "**14.** Delete the drawings fix workspace", with the number panopticon gave it, stated so that yes means do it, and under it what yes and what no each mean in practice: what changes, what's lost, what it costs. When others are still open, end with one line: "N decisions still open (see the feed)". When many open at once, as after an absence when triage finds every workspace rested, don't list each under its own paragraph: send one short message grouped by work item, a line per decision with its number and what it would do, and say what you'd recommend for the group, such as "archive all four". The user sees them all pinned at the top of `panopticon feed`. Show the open ones again only when the user asks for them.
 
-Then run the actions the user chose, one workspace at a time unless their workflow says to group them, and report each result. Stop and report the first one that fails.
+The user answers with numbers, such as "14, 16 no". A number named alone is a yes, and one followed by "no" is a no. Record the answers with `panopticon answer 14 yes 16 no`, then act on each: run what yes says, and for a no, what no says when it names a command. A number the user leaves out stays open: never read it as a no. The user declines only with an explicit "no". A number named counts as the user's yes for that one workspace, deletes included, since each one was shown on its own. A reply that isn't only numbers is read as words. When it's unclear, ask before acting.
+
+Run the actions one workspace at a time unless their workflow says to group them, and report each result. Stop and report the first one that fails. The commands that act, such as `continue`, `archive`, `delete --yes` or `resume`, also close the decision they answer. When a decision no longer needs an answer because things changed some other way, close it with `panopticon decisions close <n>`.
 
 ## Rules and tabs
 

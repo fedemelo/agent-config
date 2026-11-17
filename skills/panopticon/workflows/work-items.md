@@ -25,10 +25,19 @@ A deferred item's workspaces may then be archived, or deleted with the user's ye
 
 A tick brings a deferred item back to the inbox when its pick-up date passes, or when every PR its blocker or pick-up names is merged or closed. The item stays deferred until the user resumes it, marks it done, or defers it again. `items --due` lists the deferred items that wait on the user, and `items --json` gives the same reason in `waiting`:
 
-- `due` and `unblocked`: it came back. Bring these up every session, until the user answers.
+- `due` and `unblocked`: it came back, and panopticon opened an `item-due` decision about it: yes resumes it, and no leaves it deferred. It stays in the feed until the user answers, so name it only when it is new.
 - `check-failed`: the last check couldn't read a PR it waits on.
 - `by-hand`: no tick can check its pick-up or blocker, such as "when Mastra comes up again".
 
-Ask about the `check-failed` and `by-hand` ones about once a week, not every session. Keep the date you last asked in `~/.local/state/panopticon-skill/due-asked-on`, and ask once it is seven days old or missing. For each one, give its title, blocker and pick-up, and ask whether to resume it, mark it done, or leave it deferred.
+Ask about the `check-failed` and `by-hand` ones about once a week, not every session. Keep the date you last asked in `~/.local/state/panopticon-skill/due-asked-on`, and ask once it is seven days old or missing. For each one, give its title, blocker and pick-up, and open a decision:
+
+```sh
+panopticon ask --about <item id> --kind resume \
+  --question "Resume <title>?" \
+  --yes "a new workspace starts from its summary: panopticon resume <item id>" \
+  --no "it stays deferred, and you're asked again in a week"
+```
+
+Marking it done instead is a choice the user can name in words.
 
 `done` and `resume` change the item's state, and `resume` creates a workspace. `defer` and `done` also close the Chrome tabs of the item's specific links, unless given `--keep-tabs`. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.

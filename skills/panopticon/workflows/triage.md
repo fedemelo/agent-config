@@ -24,7 +24,7 @@ When the user asks what needs them, run `panopticon triage --json` for the list,
 
 Triage can be wrong. When the briefing doesn't fit the finding, check it, and say so when a finding is wrong.
 
-Ask each decision as under "Decisions" in the skill.
+panopticon opens a decision for each finding itself: `archive` for a rested or stale workspace, and `delete` for one proposed for deletion. Brief each under the number `decisions --json` gives it, as under "Decisions" in the skill, and never open another for the same finding. Any other choice about a workspace, such as deferring its item, is one you open with `panopticon ask --about <ws>`.
 
 ## Actions
 
