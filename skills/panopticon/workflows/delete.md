@@ -26,6 +26,8 @@ A workspace is archived or deleted as one of these:
 
   When the user said yes to deleting several workspaces, queue them in one call, not one call each. A flag applies to every workspace in the call, so put in one call only the workspaces that need the same flags, and run one call per set of flags. When it refuses some of them, report each refusal by workspace, and ask about the flag each one names.
 
+  panopticon also queues deletions itself under the user's standing yes for finished review workspaces (see "Finished review workspaces" in `workflows/reviews.md`). Those end silently when they go through or when the standing yes stops covering them: report only one that gives up, as below.
+
   Act only when the inbox says how it ended. Each of these arrives once:
   - `deleted`: tell the user it's gone.
   - `deleted-elsewhere`: something else deleted it first, such as a review refresh. Tell the user it's gone. Nothing is left to do.

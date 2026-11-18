@@ -2,16 +2,20 @@
 
 | Command | What it does |
 | --- | --- |
-| `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Answers a stale review the user edited: discard it and run a fresh review, or keep it and never refresh it |
+| `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Only when the user asks, for a stale review they edited: discard it and run a fresh review, or keep it and never refresh it |
+
+## A review is ready
+
+The one thing to tell the user about a review is the `review-staged` event: "the review of *<PR title>* is ready". Report it in that one line with its `link`, once per event. It comes for every review a workspace stages, the first one or a fresh one that replaced a stale one, and the two are told the same way. Don't add how many comments it has, that it replaced another, or how many times it was redone. Nothing to ask.
 
 ## In a bootstrap
 
 The reviews come from `bootstrap --json`'s `reviews`, in one short block:
 
-- Staged: each PR by its title, with its number of comments, and say its PR is open in a tab (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened, and give those PRs' links instead.
+- Staged: one line per review, "the review of *<PR title>* is ready", with its link, and say its PR is open in a tab (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened.
 - Not staged, each PR by its title, with its state in plain words: running, waiting (it runs idle with nothing staged, so it may be asking something; read it), never ran, or stopped without staging.
-- A staged review with `stale` went stale after the user edited it: say what made it stale and ask as under "Stale staged reviews".
-- A not-staged review with `refreshes` is a fresh review replacing one that went stale: say so, with the reason, in the same line.
+- A staged review with `stale` is one the user edited whose PR changed since: say so once, as information, with what changed (`stale`), and that their edited review is kept. Ask nothing.
+- A not-staged review with `refreshes` is a fresh review replacing one that went stale: report it like any other, without the reason or the old review.
 - A review that never ran gets a decision, asked under the number it prints:
 
   ```sh
@@ -25,11 +29,15 @@ The reviews come from `bootstrap --json`'s `reviews`, in one short block:
 
 ## Stale staged reviews
 
-A staged review the user hasn't submitted goes stale once anything happens on its PR: a push, or a comment, review or reply by anyone else. Ticks check every 15 minutes and wait for 30 quiet minutes. Their events:
+A staged review the user hasn't submitted goes stale once anything happens on its PR: a push, or a comment, review or reply by anyone else. panopticon handles it without asking, and never opens a decision about it:
 
-- "review of *<title>* was stale, a new one is running": the review was untouched, so panopticon discarded it and opened a new `review-<n>` workspace. Report it, with the reason in its context. Nothing to ask.
-- "review of *<title>* is stale, but you edited it": nothing was discarded. It can also come after a refresh started, when the user edited the review before panopticon deleted it. panopticon opens its decision itself, a `refresh-review` about the PR: ask it under the number `decisions --json` gives it. Yes runs `panopticon refresh-review <repo>#<n>`: the pending review and the user's edits on it are deleted, and a new review workspace stages a new one from scratch. No runs `panopticon keep-review <repo>#<n>`: the review stays as it is, with the user's edits, and is never refreshed, even if more happens on the PR. Say both under the question, since here a no also acts. If `refresh-review` says there is nothing to do, the review is no longer pending, the PR is closed or a draft, or a tick already refreshed it: say which applies.
-- "couldn't refresh the review of …": a step failed, and the next follow-up tries again. Report the error.
+- Untouched: panopticon discards it and opens a new `review-<n>` workspace on its own. Its events, the refresh and any refresh that failed, are silent: they never reach the inbox or a notification, so there is nothing to report or ask. The user hears of it only when the new review is ready (see "A review is ready").
+- "the review of *<PR title>* went stale and couldn't be redone": a refresh kept failing past the quiet window with no new review staged. It comes once. Report it in a line with its link; the user may want to review the PR by hand.
+- Edited by the user: their work in progress, which panopticon never discards, refreshes or asks about. One `stale-review-edited` event, "*<PR title>* changed since its review was staged; your edited review is kept", with what changed in its context, arrives once. Report it once as information, with no number and no question. Run `refresh-review` or `keep-review` only when the user asks for it. If `refresh-review` says there is nothing to do, the review is no longer pending, the PR is closed or a draft, or a tick already refreshed it: say which applies.
 - "was replaced by a new review but isn't deleted": the user's standing yes (`[reviews] delete_replaced`) let a tick try to delete the old workspace, and a check refused: its agent was working or had messages queued, it holds work that isn't on GitHub, or the user retitled or moved it. It stays proposed for deletion in triage. Report why.
 
-While the standing yes is on, an untouched stale review's old workspace is deleted without asking, so don't ask about it. Without it, or for a review the user edited, triage proposes it as replaced by a newer review, and it needs a yes like any other.
+While that standing yes is on, an untouched stale review's old workspace is deleted without asking, so don't ask about it. Without it, triage proposes it as replaced by a newer review, and it needs a yes like any other.
+
+## Finished review workspaces
+
+With `[reviews] delete_finished = true`, the user's standing yes, panopticon deletes a review workspace it created once its review is over: its PR merged or closed, or the review it staged is no longer pending (the user submitted or discarded it) and no pending review of theirs is left on the PR. It does so through the deletion queue with `--discard-work`, and silently: no decision, no notification, no inbox event to report, not even its stopping or going. Don't ask about these workspaces or report them as gone. If the standing yes stops covering one, such as the PR reopening, the deletion ends without a word. Only a deletion that gives up reaches the inbox, once, and is handled as in `workflows/delete.md`. A `review-<n>` workspace the user made by hand is never deleted this way, and triage proposes it as before. Without the key, triage proposes them and asks, as in `workflows/triage.md`.

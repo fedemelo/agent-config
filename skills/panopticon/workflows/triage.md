@@ -10,7 +10,7 @@ Every 15 minutes, a tick checks each workspace and records at most one finding f
 - **Stale**: no activity for 14 days, but it still has an open PR.
 - **Proposed for deletion**: its item is done, its linked PRs are merged or closed, you approved the review, a newer review replaced it, or it has had no activity for 14 days and has no open PR.
 
-Each finding arrives once in the inbox. A tick never acts on one.
+Each finding arrives once in the inbox. A tick never acts on one, with one exception: with `[reviews] delete_finished = true`, a review workspace panopticon created whose review is over (its PR merged or closed, or the user submitted or discarded the review it staged, with none of theirs left pending) is queued for deletion silently instead of proposed. No finding, decision or event reaches you for it, so never brief or ask about one (see "Finished review workspaces" in `workflows/reviews.md`).
 
 When the user asks what needs them, run `panopticon triage --json` for the list, and the inbox for what's new.
 
