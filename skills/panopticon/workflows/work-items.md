@@ -9,6 +9,7 @@
 | `panopticon defer <item> --summary <file or -> [--blocker <b>] [--pick-up <p>]` | Records an approved summary and sets the item aside |
 | `panopticon done <item>` | Marks an item done |
 | `panopticon resume <item> [--group <g>]` | Creates a workspace seeded with a deferred item's summary, and opens its links |
+| `panopticon start <item> --prompt <file or -> [--group <g>]` | Creates a workspace for an active item, starting from the prompt given, and opens its links |
 
 A work item is the record of one piece of the user's work: its links, its workspaces, its state, and, once deferred, a summary. Workspaces and tabs are views of it that can be closed and opened again. When the user asks what they're working on, start from `items --json`, not from `ls`.
 
@@ -20,6 +21,8 @@ Deferring is where you do the work the CLI never does. When the user wants to se
 4. Only then call `defer`, passing the summary on stdin with a quoted heredoc, and the blocker and pick-up with `--blocker` and `--pick-up`.
 
 A deferred item's workspaces may then be archived, or deleted with the user's yes. Its summary is what lasts, so never defer without one the user approved.
+
+To begin new work, make the item with `item new <title> --group <g>`, which prints its id, then give it a workspace with `start <id> --prompt -`, passing the starting prompt on stdin with a quoted heredoc. Never defer and resume an item just to create a workspace.
 
 ## Deferred items coming back
 
@@ -40,4 +43,4 @@ panopticon ask --about <item id> --kind resume \
 
 Marking it done instead is a choice the user can name in words.
 
-`done` and `resume` change the item's state, and `resume` creates a workspace. `defer` and `done` also close the Chrome tabs of the item's specific links, unless given `--keep-tabs`. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.
+`done` and `resume` change the item's state, and `resume` and `start` create a workspace. `defer` and `done` also close the Chrome tabs of the item's specific links, unless given `--keep-tabs`. Run them only when the user asks, for the item they named. `item migrate` writes only with `--apply`, and needs the user's yes for that.
