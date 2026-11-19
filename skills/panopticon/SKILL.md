@@ -23,7 +23,7 @@ Load a workflow when the user asks for what it covers, when an inbox event is ab
 | A bootstrap is due at the start of a session, or the user asks for one, or a stopped workspace needs waking to read or continue it | `bootstrap`, `bootstrap run`, `wake` | `workflows/bootstrap.md` |
 | The user asks what needs them, or a triage finding arrives | `triage`, `continue`, `keep` | `workflows/triage.md` |
 | A workspace is to be archived or deleted, or a deletion's outcome arrives | `archive`, `delete`, `deletions` | `workflows/delete.md` |
-| The user asks what they're working on, or to defer, resume or finish an item, or a deferred item comes back | `items`, `item`, `open`, `defer`, `done`, `resume` | `workflows/work-items.md` |
+| The user asks what they're working on, or to start, defer, resume or finish an item, or a deferred item comes back | `items`, `item`, `open`, `defer`, `done`, `resume`, `start` | `workflows/work-items.md` |
 | Staged reviews come up, in a bootstrap or when asked, or a stale-review event arrives | `refresh-review`, `keep-review` | `workflows/reviews.md` |
 | The user says a PR of theirs is finished or asks for review rounds, or a `rounds-ended` event arrives | `review-rounds` | `workflows/review-rounds.md` |
 | The user wants to hear in this session when a workspace's turn ends | | `workflows/wait.md` |
