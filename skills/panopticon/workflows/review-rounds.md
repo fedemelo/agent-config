@@ -12,5 +12,5 @@ A `rounds-ended` event says how the run ended:
 
 - Approved: tell the user. Triage will propose deleting the workspace.
 - Not approved, stopped early without an approval, or an outcome that couldn't be read: it's the user's call. panopticon opens a `rounds-again` decision about the PR: ask it under its number from `decisions --json`. A yes runs `review-rounds <pr> --again`, and a no runs `panopticon continue <ws>`. Offer to read the report with `panopticon read`. Keeping, archiving or deleting the workspace instead are choices you open with `panopticon ask --about <ws>` (`workflows/triage.md`, `workflows/delete.md`). Until the user answers, triage proposes nothing for it.
-- Stopped with a question: panopticon opens a `rounds-question` decision about the PR. Put the question to the user under its number, and forward their answer with `panopticon send`.
+- Stopped with a question: panopticon opens a `rounds-question` decision about the PR. Put the question to the user under its number, and forward their answer in their own words with `panopticon send --quote`, as under "Sending" in `SKILL.md`.
 - The outcome couldn't be read: read the transcript, and tell the user how the run ended, under its `rounds-again` decision.
