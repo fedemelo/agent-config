@@ -2,8 +2,8 @@
 
 | Command | What it does |
 | --- | --- |
-| `panopticon bootstrap [--json]` | Whether a bootstrap is due and why, the room under Dev Spaces' limit, the workspaces it would wake, those left asleep and why, and how the reviews stand. Changes nothing |
-| `panopticon bootstrap run` | Wakes every workspace of the user's active items that fits the room and reads their last words, asks about those that would take the places kept for reviews, and opens each staged review's PR. Prints what it did as JSON |
+| `panopticon bootstrap [--json]` | Whether a bootstrap is due and why, the room under Dev Spaces' limit, the workspaces it would wake, and those left asleep and why. Changes nothing |
+| `panopticon bootstrap run` | Wakes every workspace of the user's active items that fits the room and reads their last words, and asks about those that would take the places kept for reviews. Prints what it did as JSON |
 | `panopticon wake <ws>... [--into-reserve]` | Wakes the workspaces named and reads their last words, within the same room. Prints what it did as JSON |
 
 A bootstrap is a fresh overview for when the user starts to work. `bootstrap --json` says in `due` whether one is due, and in `reason` why, in plain words. It is due when none of the user's active work is awake: Dev Spaces stops a workspace after 2 idle hours, so when all of it sleeps, the user has been away at least that long.
@@ -22,11 +22,9 @@ Run `bootstrap run`, and `wake`, as background commands: each waits up to 11 min
 
 Open with what you did: "I woke the parser fix and the bulk deletions work." Name each workspace by its item's title and what it was doing, from its title.
 
-Then, for each woken workspace, say where it left off from `last_words` in `bootstrap run`'s output. When its entry has an `error` instead, say so plainly, and never guess where it left off from its title. Brief from `triage --json`, as under "Briefing" in `workflows/triage.md`. Its finding was answered as `continue`, which closed its decision. Open one with `panopticon ask` only for a real choice about the work, such as a workspace whose last words say it's finished.
+Then, for each woken workspace, say where it left off from `last_words` in `bootstrap run`'s output. When its entry has an `error` instead, say so plainly, and never guess where it left off from its title. Brief from `triage --lane work --json`, as under "Briefing" in `workflows/triage.md`. Its finding was answered as `continue`, which closed its decision. Open one with `panopticon ask` only for a real choice about the work, such as a workspace whose last words say it's finished.
 
 Then the ones not woken, most recent first, each with its reason in plain words. When `decision` is set, name it as under "Decisions" in `SKILL.md`: what yes costs (a review request may find no room until something stops) and what no keeps.
-
-Then report the reviews, as under "In a bootstrap" in `workflows/reviews.md`.
 
 ## Waking during the day
 

@@ -2,6 +2,8 @@
 
 | Command | What it does |
 | --- | --- |
+| `panopticon reviews [--json]` | The review queue: each staged review waiting on the user, and each review workspace that hasn't staged one yet, with how it stands. Changes nothing |
+| `panopticon reviews open` | Opens the PR of each staged review that no Chrome tab shows. Prints what it opened as JSON |
 | `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Only when the user asks, for a stale review they edited: discard it and run a fresh review, or keep it and never refresh it |
 | `panopticon exclude-review <owner>/<repo>#<n>` | The user left the PR's review to someone else: requests through a team open no review for it again, and its staged review is never refreshed |
 | `panopticon include-review <owner>/<repo>#<n>`, `excluded-reviews` | Take an excluded PR's review back; list the excluded PRs |
@@ -16,18 +18,18 @@ The one thing to tell the user about a review is the `review-staged` event: "the
 
 When the user finds a staged review too hard to read, send `/stage-review rewrite` to that PR's review workspace, followed by the comment numbers if they named some. Wake it first if it's stopped. If that workspace is gone, run `panopticon rewrite-review <owner>/<repo>#<n>` instead, which opens a new one for the rewrite. Comment numbers can't go to it, since they belong to the old workspace's index, so it rewrites every comment the user hasn't changed: say so if they named some. Either way, when its turn ends, read its report and run the `panopticon review-redrafted` line it ends with. Never rewrite a comment in this session.
 
-## In a bootstrap
+## The queue
 
-The reviews come from `bootstrap --json`'s `reviews`, in one short block:
+The reviews session opens on the queue, so the user sees at once what waits for them, and shows it again whenever they ask what reviews are pending. Run `panopticon reviews --json`, then `panopticon reviews open`, without asking, so each staged review's PR is open in a tab. Report the queue in one short block, newest first. When it is empty, say in a line that no review waits on them:
 
-- Staged: one line per review, "the review of *<PR title>* is ready", with its link, and say its PR is open in a tab (`tabs_opened` or `tabs_already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened.
+- Staged: one line per review, "the review of *<PR title>* is ready", with its link, and say its PR is open in a tab (`opened` or `already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened.
 - Not staged, each PR by its title, with its state in plain words: running, waiting (it runs idle with nothing staged, so it may be asking something; read it), never ran, or stopped without staging.
 - A staged review with `stale` is one the user edited whose PR changed since: say so once, as information, with what changed (`stale`), and that their edited review is kept. Ask nothing.
 - A not-staged review with `refreshes` is a fresh review replacing one that went stale: report it like any other, without the reason or the old review.
 - A review that never ran gets a decision, asked under the number it prints:
 
   ```sh
-  panopticon ask --about <ws> --kind start-review \
+  panopticon ask --about <ws> --lane reviews --kind start-review \
     --question "Start the review of <PR title>?" \
     --yes "wake it with its prompt: panopticon send <ws> --wake -- /stage-review <url>" \
     --no "leave it stopped; triage proposes it for deletion once its PR ends"

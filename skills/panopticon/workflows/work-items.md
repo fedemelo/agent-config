@@ -35,7 +35,7 @@ A tick brings a deferred item back to the inbox when its pick-up date passes, or
 Ask about the `check-failed` and `by-hand` ones about once a week, not every session. Keep the date you last asked in `~/.local/state/panopticon-skill/due-asked-on`, and ask once it is seven days old or missing. For each one, give its title, blocker and pick-up, and open a decision:
 
 ```sh
-panopticon ask --about <item id> --kind resume \
+panopticon ask --about <item id> --lane work --kind resume \
   --question "Resume <title>?" \
   --yes "a new workspace starts from its summary: panopticon resume <item id>" \
   --no "it stays deferred, and you're asked again in a week"

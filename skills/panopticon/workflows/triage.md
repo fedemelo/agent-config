@@ -12,11 +12,11 @@ Every 15 minutes, a tick checks each workspace and records at most one finding f
 
 Each finding arrives once in the inbox. A tick never acts on one, with one exception: with `[reviews] delete_finished = true`, a review workspace panopticon created whose review is over (its PR merged or closed, or the user submitted or discarded the review it staged, with none of theirs left pending) is queued for deletion silently instead of proposed. No finding, decision or event reaches you for it, so never brief or ask about one (see "Finished review workspaces" in `workflows/reviews.md`).
 
-When the user asks what needs them, run `panopticon triage --json` for the list, and the inbox for what's new.
+When the user asks what needs them, run `panopticon triage --lane <lane> --json` for the list, and the inbox for what's new.
 
 ## Briefing
 
-`triage --json` has most of what a briefing needs, so brief from that rather than reading each workspace. Name workspaces and PRs as under "Naming things" in the skill.
+`triage --lane <lane> --json` has most of what a briefing needs, so brief from that rather than reading each workspace. Name workspaces and PRs as under "Naming things" in the skill.
 
 - Group the workspaces by work item, and name the item.
 - Say where the agent left off, in a line, from its last words. Use `panopticon read` only when they are missing or don't settle it, and only on a running workspace. A stopped one would have to be woken to read it, so wake it only when the user agreed to that.
@@ -24,7 +24,7 @@ When the user asks what needs them, run `panopticon triage --json` for the list,
 
 Triage can be wrong. When the briefing doesn't fit the finding, check it, and say so when a finding is wrong.
 
-panopticon opens a decision for each finding itself: `archive` for a rested or stale workspace, and `delete` for one proposed for deletion. Brief each under the number `decisions --json` gives it, as under "Decisions" in the skill, and never open another for the same finding. Any other choice about a workspace, such as deferring its item, is one you open with `panopticon ask --about <ws>`.
+panopticon opens a decision for each finding itself: `archive` for a rested or stale workspace, and `delete` for one proposed for deletion. Brief each under the number `decisions --lane <lane> --json` gives it, as under "Decisions" in the skill, and never open another for the same finding. Any other choice about a workspace, such as deferring its item, is one you open with `panopticon ask --about <ws> --lane <lane>`.
 
 ## Actions
 

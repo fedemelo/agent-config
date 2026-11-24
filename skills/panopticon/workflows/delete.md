@@ -12,7 +12,7 @@ A workspace is archived or deleted as one of these:
   - `--unproposed`, for a workspace triage doesn't propose for deletion, or no longer does: one the user asks to delete on their own, one outside the conventions, one whose proposal was withdrawn, or one in a deferred item. Before asking, tell the user that triage didn't propose it and why it would keep it, such as an open PR or recent activity, and what deleting loses: the agent's conversation, and any work not on GitHub, which panopticon checks for and lists before it deletes anything. For a deferred item's workspace, its summary is already kept. panopticon opens no decision for it, so open one yourself:
 
     ```sh
-    panopticon ask --about <ws> --kind delete \
+    panopticon ask --about <ws> --lane <lane> --kind delete \
       --question "Delete <what it was doing>, though triage doesn't propose it?" \
       --yes "queue its deletion: panopticon delete <ws> --yes --unproposed" \
       --no "keep it as it is"
@@ -32,7 +32,7 @@ A workspace is archived or deleted as one of these:
   - `deleted`: tell the user it's gone.
   - `deleted-elsewhere`: something else deleted it first, such as a review refresh. Tell the user it's gone. Nothing is left to do.
   - `deletion-parked`: it waits on the user's answer, and the event says why:
-    panopticon opens a decision for it: `discard-work` or `delete-unproposed`, about the workspace. Ask it under the number `decisions --json` gives it:
+    panopticon opens a decision for it: `discard-work` or `delete-unproposed`, about the workspace. Ask it under the number `decisions --lane <lane> --json` gives it:
     - Work that isn't on GitHub, listed in the event: show the list and ask about `--discard-work`.
     - `~/repositories` holds no repo, so nothing could be checked: tell the user its work couldn't be checked, and ask about `--discard-work` for losing whatever it holds.
     - Triage no longer proposes it, or it was moved or retitled out of the conventions since the yes: say what changed, and ask about `--unproposed`.
