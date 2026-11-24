@@ -5,10 +5,16 @@
 | `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Only when the user asks, for a stale review they edited: discard it and run a fresh review, or keep it and never refresh it |
 | `panopticon exclude-review <owner>/<repo>#<n>` | The user left the PR's review to someone else: requests through a team open no review for it again, and its staged review is never refreshed |
 | `panopticon include-review <owner>/<repo>#<n>`, `excluded-reviews` | Take an excluded PR's review back; list the excluded PRs |
+| `panopticon review-redrafted <owner>/<repo>#<n>` | After a review workspace rewrote its staged comments, take the new wording as drafted, so it doesn't count as the user's edit |
+| `panopticon rewrite-review <owner>/<repo>#<n>` | When the workspace that staged a review is gone, open a new review workspace that rewrites the comments the user hasn't changed |
 
 ## A review is ready
 
 The one thing to tell the user about a review is the `review-staged` event: "the review of *<PR title>* is ready". Report it in that one line with its `link`, once per event. It comes for every review a workspace stages, the first one or a fresh one that replaced a stale one, and the two are told the same way. Don't add how many comments it has, that it replaced another, or how many times it was redone. Nothing to ask.
+
+## A plainer review
+
+When the user finds a staged review too hard to read, send `/stage-review rewrite` to that PR's review workspace, followed by the comment numbers if they named some. Wake it first if it's stopped. If that workspace is gone, run `panopticon rewrite-review <owner>/<repo>#<n>` instead, which opens a new one for the rewrite. Comment numbers can't go to it, since they belong to the old workspace's index, so it rewrites every comment the user hasn't changed: say so if they named some. Either way, when its turn ends, read its report and run the `panopticon review-redrafted` line it ends with. Never rewrite a comment in this session.
 
 ## In a bootstrap
 
