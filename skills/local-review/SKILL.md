@@ -49,7 +49,7 @@ raw `gh` calls, which would miss whatever lives somewhere you did not look.
 
 The review builds on that history, so it never reads as if the user hadn't been there before:
 
-1. Never repeat a point anyone already made. When one still holds because it was never fixed, the comment says so and links the earlier one.
+1. Never repeat a point anyone already made, bots included. When one still holds because it was never fixed, the comment says so and links the earlier one. When your finding adds to someone else's, open with "I agree with <name>" and give only what's new.
 2. Every answer to one of the user's comments gets a reply, under "Replies" below.
 
 ## Does it fix the ticket? (only when ticket context is provided)
@@ -66,7 +66,11 @@ This is the highest priority: correctness is judged against whether the change r
 1. Correctness: logic errors, edge cases, anything that could cascade to unintended effects.
 2. Unnecessary changes: anything that could have been done with less code or less churn.
 3. Intent: read the PR description as the author's statement of what they meant to do, and check the code against it. Say so whenever the two diverge, in the form "the description says X, the code does Y", and treat the divergence as a finding about the code or about a change the description never mentions, anchored to the code that diverges rather than to the description. Never review the description itself: not its wording, its formatting, its length, or whether it is still up to date.
-4. Style and hygiene, however minor: `any`, unnecessary typecasts, non-pure functions, missing tests, and comments or JSDocs that fail the [[comment-hygiene]] standard, which you load before judging them.
+4. Style and hygiene, however minor: `any`, unnecessary typecasts, non-pure functions, and comments or JSDocs that fail the [[comment-hygiene]] standard, which you load before judging them.
+
+Don't ask for tests or more test cases, either as a finding or as a closing line on another one. The user deletes nearly all of them. When untested code is wrong, the finding is the bug.
+
+Don't raise what's only a problem once something else happens: a later PR in a stack, a customer we don't have, an outage, a field someone might add. The user deletes these too. A finding stands on what the code does at this commit, or it isn't posted.
 
 ## Comment format
 
@@ -74,7 +78,7 @@ Number the comments sequentially and write each as:
 
 ```
 1.
-Category: BUG / MAJOR / MINOR / SUGGESTION / HYPOTHETICAL
+Category: BUG / MAJOR / MINOR / SUGGESTION
 Line: <piece of code from the diff so it can be found with ctrl+F>
 File: <path of the file that code lives in>
 Line number: <that line's number in the file at the PR's head, or for a removed line, its number in the base followed by (removed)>
@@ -102,10 +106,12 @@ On top of the standard:
 
 1. Name at most one identifier beyond what is already visible on the commented line, and only when the author cannot act without it. Every other name belongs in the reasoning. A path, a helper elsewhere that already does it right, the constant you are comparing against: each one is a thing the author must go and look up before they can finish reading the sentence. Having a pattern to copy is not a reason to name it, since "we already truncate this elsewhere" makes the same point, and the names are in the reasoning for the user to add if they want them.
 2. No numbers, unless the finding stops being true without them. A page count, a character limit, a row count, a version: the reader takes it on faith that some threshold exists, and its exact value changes nothing about what they do next. "A large document will not fit" is the same argument as "a 100 page document is past the 272k character limit", and asks nothing of the reader. Keep a number when the number is the finding: an off-by-one, a wrong constant, a limit the code sets too high. Every other number goes in the reasoning.
-3. Say what goes wrong, and what to do instead when that is not obvious. Leave out how the finding was reached; that is what the reasoning is for.
+3. Say what goes wrong, and what to do instead only when the author couldn't work it out from the problem. A stale comment, a duplicate, a contradiction or a needless line carries its own fix, so the comment stops at the problem. When a fix is needed, give one: no "or" with a second, and no tail saying what else it buys, like "so the tests can spy on it". Leave out how the finding was reached; that is what the reasoning is for.
 4. Investigative work is the one exception: reading logs, querying the database, re-running the code, putting an image through a pipeline. Name it only when the argument carries no weight without it, because the finding rests on what that work turned up and the author cannot see it in the diff. Whenever the code alone makes the case, the work goes unmentioned.
 5. When it is named, the opinion stays in the first person and the work is attributed to Claude: state the conclusion as "I think ...", then say what you had Claude do and what it found. For example: "I think this drops the last batch. I had Claude re-run the import against the staging dump, and the final 12 rows never landed."
 6. It must hold up alone. If compressing drops a condition that the finding depends on, keep the condition and cut something else, since a comment that is clear but wrong costs more than a long one.
+7. Put each sentence on its own line, with no period at the end, the way the user writes in GitHub. A claim and its reason can share a line, joined by "bc" or "so". The line breaks stand in for the blank lines the standard asks for.
+8. A comment about a name, wording, a typo or formatting opens with "Nit:".
 
 What a comment that fails all of this looks like:
 
@@ -113,7 +119,8 @@ What a comment that fails all of this looks like:
 
 The same finding, postable:
 
-> I think the full OCR text of a large document won't fit the model's input, so this fallback breaks too. We could cut the text down to a share of the model's limit before sending it. We already do that for payables.
+> I think the full OCR text of a large document won't fit the model's input, so this fallback breaks too
+> We could cut the text down to a share of the model's limit before sending it, like we do for payables
 
 Everything dropped was true: the page count, the character limit, the name of the error, the helper and the file it lives in, and the two dashes holding the sentences together. None of it changes what the author does next, and all of it belongs in the reasoning above.
 
@@ -137,25 +144,23 @@ When the answer settles the point, the reply is a short agreement. When it doesn
 ## Categories
 
 1. BUG: the code is wrong. It breaks now, or breaks on an input that can actually occur. It has to be fixed before merging.
-2. MAJOR: nothing breaks, but leaving it costs later. Duplicated code that will drift out of sync, an abstraction in the wrong place, a missing test over risky logic.
+2. MAJOR: nothing breaks, but leaving it costs later. Duplicated code that will drift out of sync, an abstraction in the wrong place.
 3. MINOR: objectively wrong, cheap to fix, and cheap to leave. A comment that restates the code, an unnecessary cast, a stray `any`.
 4. SUGGESTION: nothing is wrong. An alternative worth naming, and fine if the author declines it.
-5. HYPOTHETICAL: correct today, and a problem only under conditions that do not hold yet. Always state the condition.
 
 Use these tests on the boundaries:
 
 1. BUG or MAJOR: does an input that can actually occur produce wrong behavior? If yes, BUG.
 2. MAJOR or MINOR: if the author declined to change it, would you still want it changed before merging? If yes, MAJOR.
 3. MINOR or SUGGESTION: is it objectively wrong, or just not how you would have done it? If wrong, MINOR.
-4. HYPOTHETICAL or BUG: does the triggering condition exist in the code today? If yes, BUG.
 
-When two categories both fit, take the lower one. A genuine question gets no category of its own: file it under the concern behind it, usually MAJOR or HYPOTHETICAL, and phrase the comment as the question.
+When two categories both fit, take the lower one. A genuine question gets no category of its own: file it under the concern behind it, usually MAJOR, and phrase the comment as the question.
 
 ## Verdict
 
 Finish with exactly one of APPROVE, COMMENT, or REQUEST CHANGES. These are the GitHub review actions, unrelated to the categories above.
 
-1. APPROVE: the logic is correct, and if a ticket was given the PR genuinely fixes it. Every finding is MINOR, SUGGESTION, or HYPOTHETICAL. Still leave all of them, since the author addresses them regardless.
+1. APPROVE: the logic is correct, and if a ticket was given the PR genuinely fixes it. Every finding is MINOR or SUGGESTION. Still leave all of them, since the author addresses them regardless.
 2. COMMENT: there is at least one MAJOR, or a BUG that carries no real risk of breaking anything.
 3. REQUEST CHANGES: a BUG would break something real, so the PR needs a second look before merging. Reserve it for real consequences such as logically wrong code or cascading effects, not style.
 
