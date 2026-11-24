@@ -42,11 +42,11 @@ Read each of those files as a file, by path in the worktree. Don't load them as 
    - no rule covers it: a new rule.
 
 4. **Decide what may change without asking.**
-   - Making an existing rule more concrete: when the pattern spans at least 3 PRs.
+   - Making an existing rule more concrete: when the pattern recurs across several PRs.
    - Adding a new rule: when it spans at least 5 PRs.
    - Removing or loosening a rule or a category: when the user undid it in at least 5 PRs.
    - Anything else the evidence points to needs the user's yes: a new rule from a pattern in 3 or 4 PRs, or a change to a skill outside the table above.
-   - A pattern in fewer PRs changes nothing. Its edits stay unmarked, so they count again next time.
+   - A one-off changes nothing, and neither does a new rule seen in fewer than 3 PRs. Their edits stay unmarked, so they count again next time.
 
 5. **Edit.** Make the smallest change that covers each pattern you act on, in the style of the file around it. Don't paste examples from the user's PRs, which are private. A short paraphrase is fine. Keep each skill's other rules consistent with the change, as removing a category means removing it from the verdict rules too. Grep the repo for anything else that names what you changed.
 
