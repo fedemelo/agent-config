@@ -24,7 +24,7 @@ Load a workflow when the user asks for what it covers, when an inbox event is ab
 | The user asks what needs them, or a triage finding arrives | `triage`, `continue`, `keep` | `workflows/triage.md` |
 | A workspace is to be archived or deleted, or a deletion's outcome arrives | `archive`, `delete`, `deletions` | `workflows/delete.md` |
 | The user asks what they're working on, or to start, defer, resume or finish an item, or a deferred item comes back | `items`, `item`, `open`, `defer`, `done`, `resume`, `start` | `workflows/work-items.md` |
-| Staged reviews come up, in a bootstrap or when asked, or a stale-review event arrives, or the user says someone else is reviewing a PR | `refresh-review`, `keep-review`, `exclude-review`, `include-review`, `excluded-reviews` | `workflows/reviews.md` |
+| Staged reviews come up, in a bootstrap or when asked, or a stale-review event arrives, or the user says someone else is reviewing a PR or asks for a plainer review | `refresh-review`, `keep-review`, `exclude-review`, `include-review`, `excluded-reviews`, `review-redrafted`, `rewrite-review` | `workflows/reviews.md` |
 | The user says a PR of theirs is finished or asks for review rounds, or a `rounds-ended` event arrives | `review-rounds` | `workflows/review-rounds.md` |
 | A review on the user's PR is reported, its replies are ready (`replies-ready`) or couldn't be read, or the user asks about replies to reviews on their PRs | `reply-edits` | `workflows/replies.md` |
 | The user wants to hear in this session when a workspace's turn ends | | `workflows/wait.md` |
