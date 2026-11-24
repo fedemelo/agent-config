@@ -5,7 +5,8 @@ If the Bash command invokes one of them, checks that the corresponding executabl
 on PATH. If not, blocks the command and tells the model the tool is missing rather than letting
 it fall back to manually replicating the behavior with raw `gh`/git commands. That fallback is
 the real risk: for `git review-feedback` it means reading some of a PR's review feedback and
-believing that was all of it, which is the reason the skills name the tool and nothing else.
+believing that was all of it, and for `git review-reply` it means posting replies one by one, with
+no checks and no draft, which is the reason the skills name the tool and nothing else.
 """
 
 import re
@@ -14,7 +15,7 @@ import shutil
 from _pretooluse import guard_bash
 
 
-TOOLS = ("land", "todo", "review-feedback")
+TOOLS = ("land", "todo", "review-feedback", "review-reply")
 
 SUBCOMMAND_RES = {tool: re.compile(rf"(^|;|&&|\|\||\|)\s*git\s+{tool}(\s|$)") for tool in TOOLS}
 
