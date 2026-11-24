@@ -1,13 +1,13 @@
 ---
 name: stage-review
-description: Puts a local review's comments on a GitHub PR as a pending review, each on the line it is about, and its replies in the threads they answer, so you read, edit, delete and submit them in GitHub's own review screen. A pending review is visible only to you until you submit it. Ends with a short index of the comments in the order GitHub shows them, and explains and redrafts any one you reply with the number of. Takes the PR's URL or number, defaulting to the current branch's PR, and runs a local review first when this session holds none.
+description: Puts a local review's comments on a GitHub PR as a pending review, each on the line it is about, and its replies in the threads they answer, so you read, edit, delete and submit them in GitHub's own review screen. A pending review is visible only to you until you submit it. Ends with a short index of the comments in the order GitHub shows them, and explains and redrafts any one you reply with the number of. `rewrite`, with or without numbers, rewrites the staged comments in plainer words on GitHub itself. Takes the PR's URL or number, defaulting to the current branch's PR, and runs a local review first when this session holds none.
 disable-model-invocation: true
 audience: others
 ---
 
 Stage a review: turn the findings of a local review into a pending review on the PR, one comment per finding, each on its line, and one reply per answer, in its thread. The user then opens the PR's Files changed tab, deletes the comments they don't want, edits the rest in place, and submits the review with the verdict they pick.
 
-Hard constraint: never submit the review. Create it without an `event`, so it stays pending and nobody but the user sees it. Choosing COMMENT, APPROVE or REQUEST_CHANGES is the user's decision, made in GitHub, after reading every comment. Never post a comment outside the pending review either, and never touch a review that already exists. Never react to a comment or resolve a thread: both are public at once.
+Hard constraint: never submit the review. Create it without an `event`, so it stays pending and nobody but the user sees it. Choosing COMMENT, APPROVE or REQUEST_CHANGES is the user's decision, made in GitHub, after reading every comment. Never post a comment outside the pending review either, and never touch a review that already exists, except to reword your own staged comments when the user asks for `rewrite`. Never react to a comment or resolve a thread: both are public at once.
 
 ## Before reviewing
 
@@ -118,3 +118,42 @@ Explain that finding or reply and redraft it, here in the session. Never edit, a
 2. The redraft is a new version of the comment, written to [[plain-english]] and the comment rules in [[local-review]]. Make it easier to follow than the first one, since a comment the user didn't understand will lose the author too. If the explanation showed the finding is wrong, say the comment should be deleted and give no redraft.
 
 Several numbers in one reply get one answer each, in the order given.
+
+## Rewriting the staged review
+
+`/stage-review rewrite` means the user found the staged comments hard to read. Rewrite them in plainer words and change them on GitHub, in the pending review. `rewrite` followed by numbers does the same for those index numbers only. This is the one time you change the pending review after staging it.
+
+1. Load the [[plain-english]] skill and the comment rules in [[local-review]] before writing anything.
+2. Read the pending review as it is now:
+
+   ```sh
+   gh api graphql -F owner=<owner> -F name=<repo> -F n=<n> -f query='query($owner:String!,$name:String!,$n:Int!){
+     repository(owner:$owner,name:$name){ pullRequest(number:$n){ reviews(states:PENDING,first:1){ nodes{ id url comments(first:100){ nodes{ id path line body }}}}}}}'
+   ```
+
+   If there is no pending review, or it isn't the one this session staged, stop and say so. The user submitted or discarded it, or it was never this session's.
+3. Rewrite only the comments and replies whose text is still what you staged. One the user changed is theirs: leave it and list its number in the report.
+4. A rewrite says the same thing as the comment it replaces, about the same line. It adds no new point and drops none. It reads easier than the first version, since a comment the user didn't understand will lose the author too. If you go back to the code and the finding doesn't hold, don't rewrite it. Say in the report that it should be deleted and why.
+5. Change each one in place:
+
+   ```sh
+   gh api graphql -f id=<comment id> -f body=<rewrite> -f query='mutation($id:ID!,$body:String!){
+     updatePullRequestReviewComment(input:{pullRequestReviewCommentId:$id,body:$body}){ pullRequestReviewComment{ state }}}'
+   ```
+
+   Each must come back `PENDING`, or stop and report it, as when staging.
+6. panopticon keeps a copy of each comment as staged, and counts any change to one as the user's own edit. Load the [[environment]] skill. On an `owned-machine` with `panopticon` on the `PATH`, run `panopticon review-redrafted <owner>/<repo>#<n>`, so it takes the new wording as the draft. In `devspaces`, it can't be run here, so put that command in the report for whoever drives this session to run on the user's machine.
+
+Report in this shape, and nothing after it:
+
+```
+Rewrote <k> comments on #<n>, still pending:
+<PR url>/files
+
+Left alone, since you changed them: <numbers>
+Should be deleted: <number>, <one sentence saying why>
+
+panopticon review-redrafted <owner>/<repo>#<n>
+```
+
+Leave out each line that has nothing to say. Drop the command line once you ran it, and say instead that panopticon took the new wording. The index numbers stay the same, since nothing moved.
