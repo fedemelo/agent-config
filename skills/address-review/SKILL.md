@@ -1,17 +1,19 @@
 ---
 name: address-review
-description: Triages PR review feedback (human comments and bot findings) on the current branch's PR, on a given number or URL, or in a review handed over as text, fixes the real issues by following the commit skill, pushes the fixes it is sure of, and returns replies in this session for the rest. Never comments on the PR or asks anyone for a review.
+description: Triages PR review feedback (human comments and bot findings) on the current branch's PR, on a given number or URL, or in a review handed over as text, fixes the real issues by following the commit skill, pushes the fixes it is sure of, and returns in this session a reply for each point that needs one, saying what changed or why nothing did. Never comments on the PR or asks anyone for a review.
 disable-model-invocation: true
 audience: others
 ---
 
-Triage and act on the review feedback on a pull request. Fix the real issues in code, hand back replies for the ones that are not, and never post any of them yourself.
+Triage and act on the review feedback on a pull request. Fix the real issues in code, hand back a reply for each point that needs one, saying what changed or why nothing did, and never post any of them yourself.
 
 Hard constraint, and the one to hold above every other line here: never put anything in front of a person on the PR. No comment, no reply to a thread, no resolving a thread, no reaction, no review or re-review request. This holds however obviously right a reply looks and however explicitly the review asks for an answer. Every reply is text handed to the caller, who decides whether to post it.
 
 Whoever invoked this skill is the caller: the user in this session, or another skill's agent running a review cycle. Everything you would otherwise say to the user goes to the caller instead, in your response: the replies, any question you are stuck on, and whatever you chose not to commit. You address nobody else, and never the PR.
 
-Every reply here is read by a person on the PR, and the caller posts it as written, so load the [[plain-english]] standard before writing any of them and follow it in full. That covers each reply for a point that is not real, each reply carried forward from an earlier pass, and every blocking question, since the caller pastes those onto the PR too. It governs prose only, never code, identifiers or quoted text.
+Every reply here is read by a person on the PR, and the caller posts it as written, so load the [[plain-english]] standard before writing any of them and follow it in full. That covers each reply, for a point fixed or not, each reply carried forward from an earlier pass, and every blocking question, since the caller pastes those onto the PR too. It governs prose only, never code, identifiers or quoted text.
+
+A reply never names anyone with `@`, a person's login or a bot's, and no line of it starts with `/`. Either one makes GitHub notify someone or makes a bot act, such as an AI reviewer answering its own tag, and the caller may post the reply unread. Refer to a person as "you" or by role, and to a bot's finding by what it says. A login that must appear goes in backticks.
 
 Push the fixes you are sure of as soon as they are committed, without waiting to be asked, even while other points are still open. The caller can still say not to push, and then the work stays as local commits. A push covers updating the branch and nothing further, so it comes with no re-review request and no comment about what changed.
 
@@ -50,16 +52,20 @@ drops a source.
 3. `APPROVED` on a review body does not mean there is nothing to do. An approval often carries a
    request, and it is triaged like any other point.
 4. A review body takes no inline reply, which changes where the answer goes, never whether it
-   gets one. What is real is fixed in code; what is not goes into your response.
+   gets one. What is real is fixed in code, and either way its reply goes into your response.
 5. `⚠ outdated` on a thread is GitHub's own verdict that the code moved since. `⚠ written before
    the current head` on a review body or comment is a hint rather than a verdict, since nothing
    computes that one. Either way, read the code as it stands before deciding: the point may
    already be moot.
 6. Each thread arrives with the diff lines it is anchored to. That is where the comment points,
    not necessarily where the problem is, so read the file itself before concluding.
-7. A `[bot]` tag is the author's GitHub account type, not a guess from the login. It only changes
-   how a reply is phrased when the point turns out not to be a real issue.
-8. If a point cannot be fetched because it lives somewhere `gh` does not reach, ask the caller to
+7. A `[bot]` tag is the author's GitHub account type, not a guess from the login. A bot's point
+   is fixed when it is real, like any other, but gets no reply either way: nobody waits on a
+   bot's answer, and a reply to one can set it off again.
+8. A point already answered is not addressed again: a thread whose last comment is the PR
+   author's, or a review body or conversation comment that a later conversation comment by the PR
+   author quotes. Another reviewer's reply after the author's makes the thread a point again.
+9. If a point cannot be fetched because it lives somewhere `gh` does not reach, ask the caller to
    paste it, then treat it identically.
 
 ### Handed to you
@@ -83,11 +89,12 @@ caller never asked you to act on.
 ## For each point
 
 1. Understand it fully. Read what it actually means. If it is unclear, disambiguate by reading the whole PR, the other comments and discussions, and above all the code. If you still cannot be certain you understand it, do not guess. Stop, and put the question in your response as a blocking question that names the point's id, saying nothing else about that point.
-2. Decide whether it is a real issue that truly affects the code.
-3. If it is not real, write a very succinct reply explaining why, and return it in your response without posting it. The caller uses it to reply on the PR so other developers understand why nothing changed. Write it to the [[plain-english]] standard loaded above, phrased for the audience: a peer reply for a human reviewer, or a rebuttal for a bot finding that explains why it is irrelevant, already handled, or wrong.
-4. If it is real, fix it. Do not introduce new issues or undesired effects; beware race conditions and any change to the original logic or intent of the code. Load the [[comment-hygiene]] skill and apply it to comments in the code you touch: add none that merely restate the code, and drop existing ones that fail it.
-5. Review the fix again in context. Confirm it fully addresses the issue, does not alter intended behavior, and causes no problems elsewhere. It is easy to lose the overall workflow while focused on one detail, so check that the fix broke nothing else.
-6. Look for similar issues. If the same class of problem exists elsewhere, run this same procedure on each until everything is handled.
+2. Decide whether it asks for anything. Praise, thanks, a note for the record, a bot's summary or walkthrough, and anything else that asks nothing get no reply and no change. Say in your response which points you left this way, in one line each.
+3. Decide whether it is a real issue that truly affects the code.
+4. If it is not real, write a very succinct reply explaining why, and return it in your response without posting it. The caller uses it to reply on the PR so other developers understand why nothing changed. Write it to the [[plain-english]] standard loaded above, as a peer reply to the reviewer.
+5. If it is real, fix it, and write a very succinct reply saying what changed, naming the commit by its short hash once it exists. Say only what the reviewer can check in the code; never claim a test or a check you did not run. Do not introduce new issues or undesired effects; beware race conditions and any change to the original logic or intent of the code. Load the [[comment-hygiene]] skill and apply it to comments in the code you touch: add none that merely restate the code, and drop existing ones that fail it.
+6. Review the fix again in context. Confirm it fully addresses the issue, does not alter intended behavior, and causes no problems elsewhere. It is easy to lose the overall workflow while focused on one detail, so check that the fix broke nothing else.
+7. Look for similar issues. If the same class of problem exists elsewhere, run this same procedure on each until everything is handled.
 
 ## Commit and hand back
 
@@ -97,4 +104,4 @@ caller never asked you to act on.
 4. Push the branch without asking first. Your commits hold only fixes you are sure of, so they go up even while a blocking question or a discarded change is still open; those wait in your response for the caller. Hold the push only when the caller said not to push, and then say the commits are local.
 5. Once the caller settles what was open, whether by answering a question or by working out a plan with you, write the code, commit it, and push, again without asking. Their answer is the go-ahead, so the same rule applies to that pass as to the first one.
 6. A push that is rejected is reported to the caller, never forced.
-7. Return every reply and discussion point in your response, for the caller to review before publishing.
+7. Return every reply and discussion point in your response, for the caller to review before publishing. Give each reply under the id of the point it answers, with the point's `url` when the feedback came from the PR (for a thread, its first comment's), so the caller can post it where it belongs.
