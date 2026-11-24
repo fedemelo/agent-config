@@ -5,8 +5,7 @@
 # tree, so an invocation the user did not ask for costs more than a round trip. `land` opens
 # and merges a PR, `wire-up` pulls two repos and rewires the whole machine's setup, and
 # `review-rounds` spends
-# rounds of agents committing and pushing to a branch until a review approves it, and
-# `review-queue` starts a session per PR waiting on your review, `pr-from-review` starts one
+# rounds of agents committing and pushing to a branch until a review approves it, `pr-from-review` starts one
 # that pushes a branch and opens a draft PR, `stage-review` puts comments on a PR as a pending
 # review, `respond-to-review` posts replies on a PR and turns it into a draft, and `panopticon` sends your prompts to agents in
 # remote workspaces, and `learn-from-edits` changes skills and lands them on main. `say` is the odd one out: it
@@ -24,8 +23,8 @@
 # `commit` is deliberately absent. Its PreToolUse hook blocks `git commit` itself, which is
 # strictly stronger than blocking the skill that wraps it, and making it explicit-only would
 # stop open-pr and address-review from following it as a step. `side-session` is absent for the
-# second half of that reason: review-queue and pr-from-review follow it as a step, and opening a
-# space is only ever done with a name and a prompt one of them supplies.
+# second half of that reason: pr-from-review follows it as a step, and opening a space is only
+# ever done with a name and a prompt it or the panopticon skill supplies.
 #
 # The validator holds this list, SKILL.md's `disable-model-invocation` and
 # agents/openai.yaml's `policy.allow_implicit_invocation` to the same answer, so a skill
@@ -38,7 +37,6 @@ open-pr
 panopticon
 pr-from-review
 respond-to-review
-review-queue
 review-rounds
 say
 stage-review

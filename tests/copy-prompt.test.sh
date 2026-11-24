@@ -53,10 +53,10 @@ check "a standard reached twice is rendered once" \
 check "a cycle between standards terminates" \
   "$(titles pr-description | tr '\n' '|')" "PR DESCRIPTION STANDARD|PLAIN ENGLISH STANDARD|"
 check "a rule the prompt runs on travels too, not just standards" \
-  "$(titles review-queue | tr '\n' '|')" \
-  "REVIEW QUEUE GUIDELINES|SIDE SESSION RULES|ENVIRONMENT RULES|"
+  "$(titles grill-with-docs | tr '\n' '|')" \
+  "GRILL WITH DOCS GUIDELINES|GRILLING RULES|DOMAIN MODELING RULES|PLAIN ENGLISH STANDARD|"
 check "nothing is left out of a bundle that includes every reference" \
-  "$(titles review-queue | grep -c 'NOT INCLUDED')" "0"
+  "$(titles grill-with-docs | grep -c 'NOT INCLUDED')" "0"
 
 echo "=== a procedure followed as its own step is named, not pasted ==="
 check "address-review does not drag the commit chain in" \

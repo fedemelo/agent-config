@@ -50,7 +50,6 @@ NAMED_ONLY = {
     "panopticon": "PANOPTICON GUIDELINES",
     "pr-from-review": "PR FROM REVIEW GUIDELINES",
     "respond-to-review": "RESPOND TO REVIEW GUIDELINES",
-    "review-queue": "REVIEW QUEUE GUIDELINES",
     "review-rounds": "REVIEW ROUNDS GUIDELINES",
     "rust-port": "RUST PORT GUIDELINES",
     "rust-review": "RUST REVIEW GUIDELINES",
