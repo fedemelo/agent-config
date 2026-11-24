@@ -32,6 +32,7 @@ Skills marked \* only start when you type them (`/name` in Claude Code, `$name` 
 - [respond-to-review](skills/respond-to-review/SKILL.md)\*: addresses the feedback on your PR, then posts every reply at once and turns the PR into a draft, so you revise the replies before anyone reads them. panopticon sends it to the workspace that opened the PR.
 - [pr-from-review](skills/pr-from-review/SKILL.md)\*: turns a review comment into a draft PR stacked on the reviewed branch, built by a separate agent. Works on your PRs and on other people's.
 - [review-rounds](skills/review-rounds/SKILL.md)\*: up to three local-review then adress-review rounds, each by a fresh agent.
+- [learn-from-edits](skills/learn-from-edits/SKILL.md)\*: reads how you edited Claude's drafted review comments and replies before posting them, and changes the skills that drafted them to match. panopticon says when enough edits wait.
 - [land](skills/land/SKILL.md)\*: ships your commits through a disposable PR that merges itself.
 - [open-pr](skills/open-pr/SKILL.md)\*: branches off the latest default branch, commits, assigns you and writes a strict description.
 - [todo](skills/todo/SKILL.md)\*: files a GitHub issue assigned to you.
