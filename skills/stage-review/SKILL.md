@@ -121,7 +121,9 @@ Several numbers in one reply get one answer each, in the order given.
 
 ## Rewriting the staged review
 
-`/stage-review rewrite` means the user found the staged comments hard to read. Rewrite them in plainer words and change them on GitHub, in the pending review. `rewrite` followed by numbers does the same for those index numbers only. This is the one time you change the pending review after staging it.
+`/stage-review rewrite` means the user found the staged comments hard to read. Rewrite them in plainer words and change them on GitHub, in the pending review. `rewrite` followed by numbers does the same for those index numbers only. This is the one time you change the pending review after staging it, and it skips everything above: it never runs a review or stages one.
+
+panopticon may start a fresh session on `rewrite <PR url> <comment ids>` when the session that staged the review is gone. That session has no index and staged nothing, so the ids it was given stand in for both: they are the comments still as staged, and the only ones to rewrite. It has none of the review's reasoning either, so it reads the diff at the review's commit before judging a finding.
 
 1. Load the [[plain-english]] skill and the comment rules in [[local-review]] before writing anything.
 2. Read the pending review as it is now:
@@ -131,8 +133,8 @@ Several numbers in one reply get one answer each, in the order given.
      repository(owner:$owner,name:$name){ pullRequest(number:$n){ reviews(states:PENDING,first:1){ nodes{ id url comments(first:100){ nodes{ id path line body }}}}}}}'
    ```
 
-   If there is no pending review, or it isn't the one this session staged, stop and say so. The user submitted or discarded it, or it was never this session's.
-3. Rewrite only the comments and replies whose text is still what you staged. One the user changed is theirs: leave it and list its number in the report.
+   If there is no pending review, stop and say so: the user submitted or discarded it. In the session that staged it, it must be the review you staged. In a fresh session given comment ids, every id must be among its comments. Otherwise stop and say so, since it isn't the review panopticon meant.
+3. In the session that staged it, rewrite only the comments and replies whose text is still what you staged. One the user changed is theirs: leave it and list its number in the report. In a fresh session, rewrite exactly the comments whose ids you were given, and leave every other one alone.
 4. A rewrite says the same thing as the comment it replaces, about the same line. It adds no new point and drops none. It reads easier than the first version, since a comment the user didn't understand will lose the author too. If you go back to the code and the finding doesn't hold, don't rewrite it. Say in the report that it should be deleted and why.
 5. Change each one in place:
 
@@ -156,4 +158,4 @@ Should be deleted: <number>, <one sentence saying why>
 panopticon review-redrafted <owner>/<repo>#<n>
 ```
 
-Leave out each line that has nothing to say. Drop the command line once you ran it, and say instead that panopticon took the new wording. The index numbers stay the same, since nothing moved.
+Leave out each line that has nothing to say. Drop the command line once you ran it, and say instead that panopticon took the new wording. The index numbers stay the same, since nothing moved. A fresh session has no index, so it names each comment by its path and line instead of a number, and leaves out the "Left alone" line, since panopticon already left those out.
