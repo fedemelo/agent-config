@@ -28,7 +28,7 @@ If an installer exits non-zero, report its output as it stands and stop. Both fa
 
 Each of these fails at first use rather than at install time, so check every one of them and report them together:
 
-1. `~/.local/bin` is on `PATH`, via `command -v git-land git-todo git-review-feedback`. If the files exist but the commands do not resolve, give the user the line to add to their shell rc and ask before editing it yourself.
+1. `~/.local/bin` is on `PATH`, via `command -v git-land git-todo git-review-feedback git-review-reply`. If the files exist but the commands do not resolve, give the user the line to add to their shell rc and ask before editing it yourself.
 2. `git config --global user.email` is set. A fresh machine has none and every commit fails. Point at git-tools' `gitconfig.example` and let the user fill in their name, email and signing key. Never guess any of the three.
 3. `gh auth status` succeeds. Almost every skill drives `gh`.
 4. Every skill this environment gets is linked in both `~/.claude/skills/` and `~/.agents/skills/`. That is not the same as every directory under `<agent-config>/skills/`: one whose frontmatter scopes it to another environment is left out on purpose, and the installer reports which. Take the list to check against from `python3 <agent-config>/scripts/skills_for.py owned-machine`, never from the directory, or a correct install reads as a broken one. A skill added upstream only appears once the installer has run, which is the whole reason this skill exists: editing a skill takes effect immediately through the symlinks, adding or removing one does not.
