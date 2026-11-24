@@ -1,0 +1,5 @@
+interface:
+  display_name: "Respond to a review"
+  short_description: "Fix review feedback on your PR, post every reply at once, and turn the PR into a draft"
+policy:
+  allow_implicit_invocation: false
