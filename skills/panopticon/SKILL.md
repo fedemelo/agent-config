@@ -26,7 +26,8 @@ Load a workflow when the user asks for what it covers, when an inbox event is ab
 | The user asks what they're working on, or to start, defer, resume or finish an item, or a deferred item comes back | `items`, `item`, `open`, `defer`, `done`, `resume`, `start` | `workflows/work-items.md` |
 | Staged reviews come up, in a bootstrap or when asked, or a stale-review event arrives, or the user says someone else is reviewing a PR or asks for a plainer review | `refresh-review`, `keep-review`, `exclude-review`, `include-review`, `excluded-reviews`, `review-redrafted`, `rewrite-review` | `workflows/reviews.md` |
 | The user says a PR of theirs is finished or asks for review rounds, or a `rounds-ended` event arrives | `review-rounds` | `workflows/review-rounds.md` |
-| A review on the user's PR is reported, its replies are ready (`replies-ready`) or couldn't be read, or the user asks about replies to reviews on their PRs | `reply-edits` | `workflows/replies.md` |
+| A review on the user's PR is reported, its replies are ready (`replies-ready`) or couldn't be read, or the user asks about replies to reviews on their PRs | | `workflows/replies.md` |
+| An `edits-to-learn` event arrives, or the user asks to learn from their edits or what waits to be learned from | `review-edits`, `reply-edits` | `workflows/learning.md` |
 | The user wants to hear in this session when a workspace's turn ends | | `workflows/wait.md` |
 
 A workflow that leads into another says so, and you load that one then.

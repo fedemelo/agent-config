@@ -1,9 +1,5 @@
 # Reviews on the user's PRs
 
-| Command | What it does |
-| --- | --- |
-| `panopticon reply-edits [learned <id>...]` | The replies the user is done with, each as the workspace drafted it and as the user left it: kept, edited or deleted. Kept for a later skill to learn from. Run it only when the user asks |
-
 With a `my-pr-reviewed` rule that has `do = "address"`, every review someone leaves on the user's PR goes to the workspace that opened the PR, woken if it sleeps, as `/respond-to-review <url>`. That workspace fixes what holds, pushes, posts a reply per point all at once, and turns the PR into a draft straight after. The user revises every reply on GitHub and takes the PR out of draft themselves. You never do any of that: you never post, edit or delete a reply, take the PR out of draft, or ask anyone for a review.
 
 What reaches you:
