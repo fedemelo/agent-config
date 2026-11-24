@@ -3,6 +3,8 @@
 | Command | What it does |
 | --- | --- |
 | `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Only when the user asks, for a stale review they edited: discard it and run a fresh review, or keep it and never refresh it |
+| `panopticon exclude-review <owner>/<repo>#<n>` | The user left the PR's review to someone else: requests through a team open no review for it again, and its staged review is never refreshed |
+| `panopticon include-review <owner>/<repo>#<n>`, `excluded-reviews` | Take an excluded PR's review back; list the excluded PRs |
 
 ## A review is ready
 
@@ -37,6 +39,12 @@ A staged review the user hasn't submitted goes stale once anything happens on it
 - "was replaced by a new review but isn't deleted": the user's standing yes (`[reviews] delete_replaced`) let a tick try to delete the old workspace, and a check refused: its agent was working or had messages queued, it holds work that isn't on GitHub, or the user retitled or moved it. It stays proposed for deletion in triage. Report why.
 
 While that standing yes is on, an untouched stale review's old workspace is deleted without asking, so don't ask about it. Without it, triage proposes it as replaced by a newer review, and it needs a yes like any other.
+
+## Reviews left to someone else
+
+A review request can come through a team the user is in, and the team may agree that someone else takes it. When the user says so about a PR, run `exclude-review` on it without asking. From then on panopticon opens no review workspace for that PR, however often the team is asked again, and never refreshes a review staged on it. Don't tell the user to remove themselves from the PR's reviewers: there is no need to. Only a request that names the user, not their team, opens a review again. When the new review is ready, say that the user was asked by name on a PR they had left to someone else. Run `include-review` only when the user says they'll review the PR after all.
+
+Excluding a PR leaves what it already has as it is. A staged review still pending on it is the user's, so ask in words whether to discard it. Its workspaces are handled as in "Finished review workspaces": once the PR has no pending review of the user's, they are deleted under the standing yes, or proposed in triage without it.
 
 ## Finished review workspaces
 
