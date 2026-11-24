@@ -1,0 +1,5 @@
+interface:
+  display_name: "Learn from your edits"
+  short_description: "Change the drafting skills by how you edited their review comments and replies"
+policy:
+  allow_implicit_invocation: false

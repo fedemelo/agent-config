@@ -43,6 +43,7 @@ NAMED_ONLY = {
     "fact-check-my-review": "FACT-CHECK MY REVIEW GUIDELINES",
     "grill-with-docs": "GRILL WITH DOCS GUIDELINES",
     "land": "LAND GUIDELINES",
+    "learn-from-edits": "LEARN FROM EDITS GUIDELINES",
     "local-review": "LOCAL REVIEW GUIDELINES",
     "memory-check": "MEMORY CHECK GUIDELINES",
     "open-pr": "OPEN PR GUIDELINES",
