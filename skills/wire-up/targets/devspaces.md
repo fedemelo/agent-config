@@ -78,26 +78,29 @@ Comparing against the list, not against the clone's directories, is what makes o
 ### 3. Copy the git tools
 
 ```sh
-mkdir -p /mnt/personal/claude/git-tools/bin
-cp -a /tmp/git-tools-src/bin/git-review-feedback /mnt/personal/claude/git-tools/bin/
+mkdir -p /mnt/personal/claude/git-tools/bin /mnt/personal/claude/git-tools/lib
+cp -a /tmp/git-tools-src/bin/git-review-feedback /tmp/git-tools-src/bin/git-review-reply \
+  /mnt/personal/claude/git-tools/bin/
+rm -rf /mnt/personal/claude/git-tools/lib/git_tools
+cp -a /tmp/git-tools-src/lib/git_tools /mnt/personal/claude/git-tools/lib/
 ```
 
-**One tool, not three.** `git-land` and `git-todo` back the `land` and `todo` skills, which are scoped to a machine the user owns and are never installed here, so copying them would leave a pod holding tools with nothing to call them. `git-review-feedback` is the one the review skills are built on, and those do run here.
+**Two tools, not four.** `git-land` and `git-todo` back the `land` and `todo` skills, which are scoped to a machine the user owns and are never installed here, so copying them would leave a pod holding tools with nothing to call them. `git-review-feedback` is the one the review skills are built on, and `git-review-reply` is how `respond-to-review` posts its replies. Both skills run here.
 
-It is a standalone script with no install step. `~/.local/bin` is already on `PATH` in the pod image, and git resolves an executable named `git-<name>` there as the subcommand `git <name>`, so copying it is the whole installation: no config key, nothing to set. Keep the executable bit (`cp -a` does); a copy that loses it fails as "command not found".
+Neither has an install step. `~/.local/bin` is already on `PATH` in the pod image, and git resolves an executable named `git-<name>` there as the subcommand `git <name>`, so copying them is the whole installation: no config key, nothing to set. Keep the executable bit (`cp -a` does); a copy that loses it fails as "command not found". Both import their shared `gh` code from `lib/git_tools/`, found beside the `bin/` directory they run from, so step 4 copies `lib/` into `~/.local/lib/`, beside `~/.local/bin/`. Without it both fail on their first line.
 
 Apply removals here too, for the same reason as the skills:
 
 ```sh
 for f in /mnt/personal/claude/git-tools/bin/*; do
   name="$(basename "$f")"
-  [ "$name" = "git-review-feedback" ] && continue
+  case "$name" in git-review-feedback|git-review-reply) continue ;; esac
   rm -f "/mnt/personal/claude/git-tools/bin/$name" "$HOME/.local/bin/$name"
   echo "removed $name"
 done
 ```
 
-Comparing against the one name a pod gets, rather than against the clone, is what clears a `git-land` or `git-todo` left behind by an earlier wire-up that still copied them. If `/tmp/git-tools-src/bin` holds some other script, report it rather than copying it. Whether a new tool belongs in a pod is the user's call.
+Comparing against the two names a pod gets, rather than against the clone, is what clears a `git-land` or `git-todo` left behind by an earlier wire-up that still copied them. If `/tmp/git-tools-src/bin` holds some other script, report it rather than copying it, and do the same for anything in `/tmp/git-tools-src/lib` beside `git_tools`. Whether a new tool belongs in a pod is the user's call.
 
 Optionally also copy `hooks/commit-msg` and `ignore` onto the share for reference, but **do not wire either one** — each needs a global `git config` key, and the hook conflicts with pod policy. Leave `core.hooksPath` and `core.excludesFile` unset.
 
@@ -123,13 +126,17 @@ if [ -d /mnt/personal/claude/commands ]; then
   cp -a /mnt/personal/claude/commands/. "$HOME/.claude/commands/"
 fi
 
-# git review-feedback, which the PR-review skills are built on. It is the only
-# git-tools subcommand a pod gets: git land and git todo back skills scoped to
-# an owned machine and never installed here. ~/.local/bin is already on PATH
-# and git finds a `git-<name>` executable there as the subcommand `git <name>`.
+# git review-feedback and git review-reply, which the PR-review skills are
+# built on. They are the only git-tools subcommands a pod gets: git land and
+# git todo back skills scoped to an owned machine and never installed here.
+# ~/.local/bin is already on PATH and git finds a `git-<name>` executable there
+# as the subcommand `git <name>`. Both import lib/git_tools from beside bin/.
 if [ -d /mnt/personal/claude/git-tools/bin ]; then
-  mkdir -p "$HOME/.local/bin"
+  mkdir -p "$HOME/.local/bin" "$HOME/.local/lib"
   cp -a /mnt/personal/claude/git-tools/bin/. "$HOME/.local/bin/"
+  if [ -d /mnt/personal/claude/git-tools/lib ]; then
+    cp -a /mnt/personal/claude/git-tools/lib/. "$HOME/.local/lib/"
+  fi
 fi
 ```
 
@@ -156,7 +163,7 @@ Check, do not assume:
 3. **Deletions took:** every name the removal loops printed is gone from `/mnt/personal/claude/skills`, `~/.claude/skills`, `~/.agents/skills`, `/mnt/personal/claude/git-tools/bin` and `~/.local/bin`.
 4. **Frontmatter matches directory:** each `SKILL.md`'s `name:` equals its directory name, or neither runtime will load it.
 5. **References resolve:** every `[[name]]` in a copied skill names a skill that was also copied. Missing ones are dangling.
-6. **The one tool resolves, and only it:** `command -v git-review-feedback` finds it, then a real read, e.g. `git review-feedback <a recent PR number>` from a repo. `--help` through the `git` subcommand form hits a man-page error on the minimized pod image, which is git, not a broken tool; use `git-review-feedback --help` with the hyphen. `command -v git-land git-todo` must find **nothing**: either one resolving means an earlier wire-up copied it and the removal loop has not cleared it.
+6. **The two tools resolve, and only they:** `command -v git-review-feedback git-review-reply` finds both, then a real read, e.g. `git review-feedback <a recent PR number>` from a repo, and `git-review-reply --help`, which proves `~/.local/lib/git_tools` is found without posting anything. `--help` through the `git` subcommand form hits a man-page error on the minimized pod image, which is git, not a broken tool; use the hyphenated form. `command -v git-land git-todo` must find **nothing**: either one resolving means an earlier wire-up copied it and the removal loop has not cleared it.
 7. **Nothing leaked into a repo:** `git status --short` in each repo you touched is clean, and none of the skill names appear in any repo's `.claude/skills/` or `.agents/skills/`.
 
 Then `rm -rf /tmp/agent-config-src /tmp/git-tools-src`.
@@ -168,7 +175,7 @@ Where the user's conventions disagree with the organization's settings or a repo
 - **Commit attribution.** The `commit` skill forbids a `Co-Authored-By` trailer, and git-tools' `commit-msg` hook strips one. The pod's managed settings (`/etc/claude-code/managed-settings.json`, key `attribution.commit`) inject exactly that trailer, and organization policy requires it. So the hook is not installed and the trailer stays. Installing it would also rewrite commit messages in **every** repo in the pod, since `core.hooksPath` is global.
 - **Repo-specific delivery skills.** A repo may mandate its own PR workflow — `canals` tells every agent to use `/canals:ship-it` — which overlaps `commit` and `open-pr`. Both sets are installed, and in a repo that mandates its own workflow, that workflow wins.
 
-Also worth stating plainly: without git-tools, the review skills (`local-review`, `address-review`, `discussion-audit`, `fact-check-my-review`) lose the `git review-feedback` read they are built on, and since no hooks are installed here the failure is a bare `git: 'review-feedback' is not a git command` rather than anything that explains itself. Those skills say to report that and stop, which is the right answer either way.
+Also worth stating plainly: without git-tools, the review skills (`local-review`, `address-review`, `respond-to-review`, `discussion-audit`, `fact-check-my-review`) lose the `git review-feedback` read they are built on, and since no hooks are installed here the failure is a bare `git: 'review-feedback' is not a git command` rather than anything that explains itself. Those skills say to report that and stop, which is the right answer either way.
 
 ## Updating later
 
