@@ -1,10 +1,10 @@
 ---
 name: review-rounds
-description: Runs a PR through rounds of review and addressing until a review approves it or three rounds are spent, with every review written by a separate agent that knows nothing about the earlier rounds. Hands each review to the address-review skill, which fixes the real findings and pushes, ends every run with a comment-hygiene pass over the code the PR touches, and hands back the replies and anything left.
+description: Runs a PR through rounds of review and addressing until a review approves it or five rounds are spent, with every review written by a separate agent that knows nothing about the earlier rounds. Hands each review to the address-review skill, which fixes the real findings and pushes, ends every run with a comment-hygiene pass over the code the PR touches, and hands back the replies and anything left.
 disable-model-invocation: true
 ---
 
-Review a pull request, address that review, and review it again, until a review approves the PR or three rounds are spent.
+Review a pull request, address that review, and review it again, until a review approves the PR or five rounds are spent.
 
 Hard constraint, the reason this skill exists, and the one to hold above every other line here: every review is written by an agent whose context starts empty and never learns that an earlier round happened. You orchestrate. You never review the PR, never judge whether a finding is real, and never touch code. An opinion of your own about a finding is out of scope however obviously right it looks, because you hold every review and every reply of every round, which is precisely the context a review must not be written in.
 
@@ -65,8 +65,8 @@ You read that file rather than handing its path to the agent that needs it. addr
 
    1. APPROVE in round 1: stop, and address nothing. A PR the first clean reviewer approved needs no pass over it.
    2. APPROVE in a later round: run one addressing pass over this review, and end the cycle after it, with no further review. Reaching approval took rounds, so the findings left under it are worth acting on even though none of them withholds approval.
-   3. COMMENT or REQUEST CHANGES in round 3: stop, and address nothing. Three rounds have not settled it, so the next call is the user's rather than another pass nobody reviews.
-   4. COMMENT or REQUEST CHANGES in round 1 or 2: run an addressing pass, then start the next round.
+   3. COMMENT or REQUEST CHANGES in round 5: stop, and address nothing. Five rounds have not settled it, so the next call is the user's rather than another pass nobody reviews.
+   4. COMMENT or REQUEST CHANGES in rounds 1 to 4: run an addressing pass, then start the next round.
 
 4. An addressing pass is another agent, spawned the same way, with an empty context. Give it, and only it, the settled replies; a reviewer that reads them is a reviewer that knows what the last round argued. Prompt it with:
 
@@ -93,7 +93,7 @@ Run one review and one addressing pass, tell the pass not to push, and end there
 
 ## Before reporting
 
-Every run ends with one pass over the comments in the code the PR touches, whatever ended the cycle: an approval in round 1, an approval in a later round, three rounds spent, or the single pass that runs when reviewers are already on the PR. A review rarely spends a finding on a comment that restates the code, and an addressing pass judges only the comments in the lines it happened to touch, so the rest of the PR reaches the standard nowhere but here.
+Every run ends with one pass over the comments in the code the PR touches, whatever ended the cycle: an approval in round 1, an approval in a later round, five rounds spent, or the single pass that runs when reviewers are already on the PR. A review rarely spends a finding on a comment that restates the code, and an addressing pass judges only the comments in the lines it happened to touch, so the rest of the PR reaches the standard nowhere but here.
 
 It is another agent with an empty context, spawned like an addressing pass and for the same reason: this session does not touch code. Prompt it with:
 
@@ -118,11 +118,11 @@ Outcome: stopped with a question in round <n>
 Outcome: stopped early
 ```
 
-An approval in any round is the first. COMMENT or REQUEST CHANGES in round 3 is the second. A blocking question is the third. Anything else that ends the run without an approval is the fourth: a check before the first round that fails, a pass that breaks the clean tree, or the single pass when reviewers were already on the PR and its review didn't approve. panopticon reads this line without a model, and it keeps only the start of the reply, so the line goes first.
+An approval in any round is the first. COMMENT or REQUEST CHANGES in round 5 is the second. A blocking question is the third. Anything else that ends the run without an approval is the fourth: a check before the first round that fails, a pass that breaks the clean tree, or the single pass when reviewers were already on the PR and its review didn't approve. panopticon reads this line without a model, and it keeps only the start of the reply, so the line goes first.
 
-Then:
+Then, when this session also did the work the PR holds, as when panopticon starts the rounds in the workspace that opened the PR, one line on what the user asked for and the PR it went into, so the report reads as the end of the job. Then:
 
-1. Every round's verdict, in order, and where the run stopped: an approval, three rounds spent, a blocking question, or a contract broken.
+1. Every round's verdict, in order, and where the run stopped: an approval, five rounds spent, a blocking question, or a contract broken.
 2. Every reply that came back, by round and point id, verbatim, for the user to post. These are the replies themselves, not a summary of them.
 3. Whatever any pass discarded instead of committing, with the reason it gave.
 4. What the comment pass changed, and any comment it kept against the standard.
