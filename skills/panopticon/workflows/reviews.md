@@ -4,15 +4,15 @@
 | --- | --- |
 | `panopticon reviews [--json]` | The review queue: each staged review waiting on the user, and each review workspace that hasn't staged one yet, with how it stands. Changes nothing |
 | `panopticon reviews open` | Opens the PR of each staged review that no Chrome tab shows. Prints what it opened as JSON |
-| `panopticon refresh-review <repo>#<n>`, `keep-review <repo>#<n>` | Only when the user asks, for a stale review they edited: discard it and run a fresh review, or keep it and never refresh it |
-| `panopticon exclude-review <owner>/<repo>#<n>` | The user left the PR's review to someone else: requests through a team open no review for it again, and its staged review is never refreshed |
+| `panopticon refresh-review <repo>#<n>` | Only when the user asks: bring the staged review in line with its PR now, without waiting for the PR to go quiet |
+| `panopticon exclude-review <owner>/<repo>#<n>` | The user left the PR's review to someone else: requests through a team open no review for it again, and its staged review is never updated |
 | `panopticon include-review <owner>/<repo>#<n>`, `excluded-reviews` | Take an excluded PR's review back; list the excluded PRs |
 | `panopticon review-redrafted <owner>/<repo>#<n>` | After a review workspace rewrote its staged comments, take the new wording as drafted, so it doesn't count as the user's edit |
 | `panopticon rewrite-review <owner>/<repo>#<n>` | When the workspace that staged a review is gone, open a new review workspace that rewrites the comments the user hasn't changed |
 
 ## A review is ready
 
-The one thing to tell the user about a review is the `review-staged` event: "the review of *<PR title>* is ready". Report it in that one line with its `link`, once per event. It comes for every review a workspace stages, the first one or a fresh one that replaced a stale one, and the two are told the same way. Don't add how many comments it has, that it replaced another, or how many times it was redone. Nothing to ask.
+The one thing to tell the user about a review is the `review-staged` event: "the review of *<PR title>* is ready". Report it in that one line with its `link`, once per event. It comes once per review, when a workspace first stages it, or when a new workspace takes over a review whose workspace was gone. Don't add how many comments it has or how many times it was updated. Nothing to ask.
 
 ## A plainer review
 
@@ -24,8 +24,7 @@ The reviews session opens on the queue, so the user sees at once what waits for 
 
 - Staged: one line per review, "the review of *<PR title>* is ready", with its link, and say its PR is open in a tab (`opened` or `already_open`). Report each entry in `warnings` in a line, such as tabs that couldn't be opened.
 - Not staged, each PR by its title, with its state in plain words: running, waiting (it runs idle with nothing staged, so it may be asking something; read it), never ran, or stopped without staging.
-- A staged review with `stale` is one the user edited whose PR changed since: say so once, as information, with what changed (`stale`), and that their edited review is kept. Ask nothing.
-- A not-staged review with `refreshes` is a fresh review replacing one that went stale: report it like any other, without the reason or the old review.
+- A staged review with `updating` is being brought in line with its PR: say so in the same line, with what changed (`updating`), so the user waits for it before editing. Ask nothing.
 - A review that never ran gets a decision, asked under the number it prints:
 
   ```sh
@@ -39,18 +38,16 @@ The reviews session opens on the queue, so the user sees at once what waits for 
 
 ## Stale staged reviews
 
-A staged review the user hasn't submitted goes stale once anything happens on its PR: a push, or a comment, review or reply by anyone else. panopticon handles it without asking, and never opens a decision about it:
+A staged review the user hasn't submitted goes stale once anything happens on its PR: new commits, or a comment, review or reply by anyone else, bots and backtests included. panopticon handles it without asking, and never opens a decision about it. Once the PR has been quiet for a while, it sends `/stage-review update` to the workspace that staged the review, or opens a new one when that is gone. The update removes comments the code fixed or that someone else already made, rewrites ones that add to someone else's point as "I agree with <name>", moves outdated ones and adds new findings, in the pending review. It does this to the user's own edited comments too: keeping the review current matters more than keeping their wording.
 
-- Untouched: panopticon discards it and opens a new `review-<n>` workspace on its own. Its events, the refresh and any refresh that failed, are silent: they never reach the inbox or a notification, so there is nothing to report or ask. The user hears of it only when the new review is ready (see "A review is ready").
-- "the review of *<PR title>* went stale and couldn't be redone": a refresh kept failing past the quiet window with no new review staged. It comes once. Report it in a line with its link; the user may want to review the PR by hand.
-- Edited by the user: their work in progress, which panopticon never discards, refreshes or asks about. One `stale-review-edited` event, "*<PR title>* changed since its review was staged; your edited review is kept", with what changed in its context, arrives once. Report it once as information, with no number and no question. Run `refresh-review` or `keep-review` only when the user asks for it. If `refresh-review` says there is nothing to do, the review is no longer pending, the PR is closed or a draft, or a tick already refreshed it: say which applies.
-- "was replaced by a new review but isn't deleted": the user's standing yes (`[reviews] delete_replaced`) let a tick try to delete the old workspace, and a check refused: its agent was working or had messages queued, it holds work that isn't on GitHub, or the user retitled or moved it. It stays proposed for deletion in triage. Report why.
-
-While that standing yes is on, an untouched stale review's old workspace is deleted without asking, so don't ask about it. Without it, triage proposes it as replaced by a newer review, and it needs a yes like any other.
+- An update that changed none of the user's comments is silent: there is nothing to report.
+- "the review of *<PR title>* was updated; N of your comments changed": report it in a line with its link and the comments it names. Their old text is in the workspace's report; offer to show it, and read it from the workspace when asked.
+- "the review of *<PR title>* went stale and couldn't be redone": an update kept failing past the quiet window. It comes once. Report it in a line with its link; the user may want to review the PR by hand.
+- Run `refresh-review` only when the user asks to update a review now. If it refuses, an update is already running, or the review is no longer pending or its PR is closed or a draft: say which applies.
 
 ## Reviews left to someone else
 
-A review request can come through a team the user is in, and the team may agree that someone else takes it. When the user says so about a PR, run `exclude-review` on it without asking. From then on panopticon opens no review workspace for that PR, however often the team is asked again, and never refreshes a review staged on it. Don't tell the user to remove themselves from the PR's reviewers: there is no need to. Only a request that names the user, not their team, opens a review again. When the new review is ready, say that the user was asked by name on a PR they had left to someone else. Run `include-review` only when the user says they'll review the PR after all.
+A review request can come through a team the user is in, and the team may agree that someone else takes it. When the user says so about a PR, run `exclude-review` on it without asking. From then on panopticon opens no review workspace for that PR, however often the team is asked again, and never updates a review staged on it. Don't tell the user to remove themselves from the PR's reviewers: there is no need to. Only a request that names the user, not their team, opens a review again. When the new review is ready, say that the user was asked by name on a PR they had left to someone else. Run `include-review` only when the user says they'll review the PR after all.
 
 Excluding a PR leaves what it already has as it is. A staged review still pending on it is the user's, so ask in words whether to discard it. Its workspaces are handled as in "Finished review workspaces": once the PR has no pending review of the user's, they are deleted under the standing yes, or proposed in triage without it.
 
