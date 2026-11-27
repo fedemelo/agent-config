@@ -41,6 +41,7 @@ NAMED_ONLY = {
     "dictation-vocab": "DICTATION VOCAB GUIDELINES",
     "discussion-audit": "DISCUSSION AUDIT GUIDELINES",
     "fact-check-my-review": "FACT-CHECK MY REVIEW GUIDELINES",
+    "fix-pr": "FIX PR GUIDELINES",
     "grill-with-docs": "GRILL WITH DOCS GUIDELINES",
     "land": "LAND GUIDELINES",
     "learn-from-edits": "LEARN FROM EDITS GUIDELINES",

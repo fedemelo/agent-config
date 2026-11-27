@@ -1,0 +1,5 @@
+interface:
+  display_name: "Fix a PR that can't merge"
+  short_description: "Resolve conflicts with the base and fix the CI failures that are the PR's own"
+policy:
+  allow_implicit_invocation: false
