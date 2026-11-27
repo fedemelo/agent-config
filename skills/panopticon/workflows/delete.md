@@ -30,7 +30,7 @@ A workspace is archived or deleted as one of these:
 
   Act only when the inbox says how it ended. Each of these arrives once:
   - `deleted`: tell the user it's gone.
-  - `deleted-elsewhere`: something else deleted it first, such as a review refresh. Tell the user it's gone. Nothing is left to do.
+  - `deleted-elsewhere`: something else deleted it first, such as the standing yes for finished reviews. Tell the user it's gone. Nothing is left to do.
   - `deletion-parked`: it waits on the user's answer, and the event says why:
     panopticon opens a decision for it: `discard-work` or `delete-unproposed`, about the workspace. Ask it under the number `decisions --lane <lane> --json` gives it:
     - Work that isn't on GitHub, listed in the event: show the list and ask about `--discard-work`.
