@@ -181,7 +181,7 @@ The ids are the comments still exactly as drafted. Every other comment and reply
    1. The code at the head fixed what it points out, or it no longer holds: delete it.
    2. Someone else already made its point, since it was staged or before: delete it.
    3. Someone else made part of its point: rewrite it to open with "I agree with <name>" and say only what it adds, following the comment rules.
-   4. It still holds and adds something, but GitHub marks it `outdated`: delete it and add the same text again on its line at the head, as in 6. One that can't be placed there stays where it is, and the report says so.
+   4. It still holds and adds something, but GitHub marks it `outdated`: add the same text again on its line at the head, as in 6, then delete the old one. One that can't be placed there stays where it is, and the report says so.
    5. Otherwise leave it as it is.
 
    Delete with:
@@ -191,7 +191,9 @@ The ids are the comments still exactly as drafted. Every other comment and reply
      deletePullRequestReviewComment(input:{id:$id}){ pullRequestReview{ state }}}'
    ```
 
-   and rewrite in place with:
+   In a Dev Spaces workspace GitHub refuses that with a 403, since the workspace may edit a pending comment but not delete one. Then rewrite its body to exactly `panopticon: delete this comment`, and panopticon deletes it as the user at its next follow-up. Never try to get around the 403 in any other way. The report lists the comment under "Removed" all the same.
+
+   Rewrite in place with:
 
    ```sh
    gh api graphql -f id=<comment id> -f body=<rewrite> -f query='mutation($id:ID!,$body:String!){
