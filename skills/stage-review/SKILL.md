@@ -1,13 +1,13 @@
 ---
 name: stage-review
-description: Puts a local review's comments on a GitHub PR as a pending review, each on the line it is about, and its replies in the threads they answer, so you read, edit, delete and submit them in GitHub's own review screen. A pending review is visible only to you until you submit it. Ends with a short index of the comments in the order GitHub shows them, and explains and redrafts any one you reply with the number of. `rewrite`, with or without numbers, rewrites the staged comments in plainer words on GitHub itself. `update` redoes the review against the PR's new head, in the pending review, keeping the comments you changed. Takes the PR's URL or number, defaulting to the current branch's PR, and runs a local review first when this session holds none.
+description: Puts a local review's comments on a GitHub PR as a pending review, each on the line it is about, and its replies in the threads they answer, so you read, edit, delete and submit them in GitHub's own review screen. A pending review is visible only to you until you submit it. Ends with a short index of the comments in the order GitHub shows them, and explains and redrafts any one you reply with the number of. `rewrite`, with or without numbers, rewrites the staged comments in plainer words on GitHub itself. `update` brings the pending review in line with the PR's new commits and anyone else's comments since it was staged, in place. Takes the PR's URL or number, defaulting to the current branch's PR, and runs a local review first when this session holds none.
 disable-model-invocation: true
 audience: others
 ---
 
 Stage a review: turn the findings of a local review into a pending review on the PR, one comment per finding, each on its line, and one reply per answer, in its thread. The user then opens the PR's Files changed tab, deletes the comments they don't want, edits the rest in place, and submits the review with the verdict they pick.
 
-Hard constraint: never submit the review. Create it without an `event`, so it stays pending and nobody but the user sees it. Choosing COMMENT, APPROVE or REQUEST_CHANGES is the user's decision, made in GitHub, after reading every comment. Never post a comment outside the pending review either, and never touch a review that already exists, except in `rewrite` and `update`, and then only the comments you staged that the user didn't change. Never react to a comment or resolve a thread: both are public at once.
+Hard constraint: never submit the review. Create it without an `event`, so it stays pending and nobody but the user sees it. Choosing COMMENT, APPROVE or REQUEST_CHANGES is the user's decision, made in GitHub, after reading every comment. Never post a comment outside the pending review either, and never touch a review that already exists, except in `rewrite`, and then only the comments you staged that the user didn't change, and in `update`. Never react to a comment or resolve a thread: both are public at once.
 
 ## Before reviewing
 
@@ -162,7 +162,9 @@ Leave out each line that has nothing to say. Drop the command line once you ran 
 
 ## Updating the staged review
 
-`/stage-review update <PR url> <comment ids>` comes from panopticon, in a fresh session, after the PR's head moved on under a review the user had started editing. A review the user hadn't touched is thrown away and staged again from scratch, but this one holds their edits. So redo the whole review against the new head, in the pending review itself, and leave the user's work as it is. The ids are the comments still exactly as drafted: those are yours to delete or move. Every other comment and reply in the review, one the user edited or added, is theirs, and you never change, move or delete it.
+`/stage-review update <PR url> <comment ids>` comes from panopticon after something happened on the PR under a pending review: new commits, or a comment, review or reply by someone else, a bot or a backtest included. The review was written against older code and an older discussion, so some comments may now point at code that changed or a bug that was fixed, and some may repeat what someone else has said since. Bring the review in line with the PR as it is now, in the pending review itself. It usually comes to the session that staged the review, which holds its reasoning, and comes to a fresh session only when that one is gone.
+
+The ids are the comments still exactly as drafted. Every other comment and reply in the review is the user's: one they edited or added. Being current matters more than keeping the user's wording, so judge their comments by the same rules as yours. Keep their wording when the comment still holds and nobody else has made its point. Change or delete it only when it doesn't, and give its full text in the report, so they can put it back.
 
 1. Load the [[plain-english]] skill and the comment rules in [[local-review]] before writing anything.
 2. Read the PR's head and the pending review:
@@ -172,30 +174,41 @@ Leave out each line that has nothing to say. Drop the command line once you ran 
      repository(owner:$owner,name:$name){ pullRequest(number:$n){ url headRefOid reviews(states:PENDING,first:1){ nodes{ id url commit{ oid } comments(first:100){ nodes{ id path line outdated body }}}}}}}'
    ```
 
-   If there is no pending review, stop and say so: the user submitted or discarded it. If any id you were given isn't among its comments, stop and say so, since it isn't the review panopticon meant. Keep each given comment's body as read now.
-3. Run [[local-review]] on the PR at its current head, the whole PR, not only what changed, and write it out in full above, as when staging. You don't have the first review's reasoning, so don't lean on the comments already there: review the code.
-4. Reconcile the new review with the pending one:
-   1. A new finding whose point a comment already in the review makes, yours or the user's: skip it.
-   2. Any other new finding: add it on its line at the current head, placed by the rules in "Placing each comment" against the diff at `headRefOid`. Send it into the pending review by its id, never through REST and never through anything that posts:
+   If there is no pending review, stop and say so: the user submitted or discarded it. If any id you were given isn't among its comments, stop and say so, since it isn't the review panopticon meant. Keep each comment's body as read now.
+3. Read the PR's whole history as [[local-review]] does: every point anyone made, human or bot, with the answers to each. What came since the review was staged is what most likely changes it.
+4. Work out what changed in the code. When the head is still the review's commit, only the discussion changed: skip to 5 and don't review the code again. Otherwise read the diff from the review's commit to the head, then run [[local-review]] on the PR at its current head, and write it out in full above, as when staging. In the session that staged the review, check each finding against the code at the head, not against what you concluded before: the point of the update is that the code moved. In a fresh session you have no earlier reasoning, so review the code without leaning on the comments already there.
+5. Go through every comment in the review, yours and the user's, against the code at the head and the discussion now:
+   1. The code at the head fixed what it points out, or it no longer holds: delete it.
+   2. Someone else already made its point, since it was staged or before: delete it.
+   3. Someone else made part of its point: rewrite it to open with "I agree with <name>" and say only what it adds, following the comment rules.
+   4. It still holds and adds something, but GitHub marks it `outdated`: delete it and add the same text again on its line at the head, as in 6. One that can't be placed there stays where it is, and the report says so.
+   5. Otherwise leave it as it is.
 
-      ```sh
-      gh api graphql -f review=<review id> -f path=<File> -F line=<line> -f side=RIGHT -f body=<Comment, verbatim> -f query='mutation($review:ID!,$path:String!,$line:Int!,$side:DiffSide!,$body:String!){
-        addPullRequestReviewThread(input:{pullRequestReviewId:$review,path:$path,line:$line,side:$side,body:$body}){ thread{ comments(first:1){ nodes{ id state outdated commit{ oid }}}}}}'
-      ```
+   Delete with:
 
-      It must come back `PENDING`, or stop and report it, as when staging. A pending review keeps the commit it was created on, and GitHub's docs don't say that a thread added to it later lands on the current head. So check the first one you add: its `commit` must be `headRefOid` and it must not be `outdated`. If it isn't, delete it again, add nothing more, and give every remaining finding as not staged, saying that GitHub put new comments on the review's old commit.
-   3. One of your comments whose point the new review no longer makes, since the code fixed it or it no longer holds: delete it.
+   ```sh
+   gh api graphql -f id=<comment id> -f query='mutation($id:ID!){
+     deletePullRequestReviewComment(input:{id:$id}){ pullRequestReview{ state }}}'
+   ```
 
-      ```sh
-      gh api graphql -f id=<comment id> -f query='mutation($id:ID!){
-        deletePullRequestReviewComment(input:{id:$id}){ pullRequestReview{ state }}}'
-      ```
+   and rewrite in place with:
 
-   4. One of your comments whose point still holds but that GitHub marks `outdated`: delete it and add the same text again on its line at the new head, as in ii. One that can't be placed there stays where it is, and the report says so.
-   5. Before each delete or move, read that comment again, and go ahead only if its body is still what step 2 read. The user may be editing while you work, and a comment they changed is theirs.
-   6. The user's comments stay as they are. For each one GitHub marks `outdated`, work out whether its point still holds at the new head, so the user can decide what to do with it.
-5. Never submit the review, never post outside it, and never react to a comment or resolve a thread.
-6. panopticon notices the update and takes the new wording as drafted on its own, so unlike `rewrite` there is no `review-redrafted` command to run.
+   ```sh
+   gh api graphql -f id=<comment id> -f body=<rewrite> -f query='mutation($id:ID!,$body:String!){
+     updatePullRequestReviewComment(input:{pullRequestReviewCommentId:$id,body:$body}){ pullRequestReviewComment{ state }}}'
+   ```
+
+   Before each delete, move or rewrite, read that comment again, and go ahead only if its body is still what step 2 read. The user may be editing it while you work. One that changed is left alone and listed in the report.
+6. Add each new finding that no comment in the review and no one else already makes. A finding that adds to someone else's point opens with "I agree with <name>". Place it on its line at the head by the rules in "Placing each comment", against the diff at `headRefOid`, and send it into the pending review by its id, never through REST and never through anything that posts:
+
+   ```sh
+   gh api graphql -f review=<review id> -f path=<File> -F line=<line> -f side=RIGHT -f body=<Comment, verbatim> -f query='mutation($review:ID!,$path:String!,$line:Int!,$side:DiffSide!,$body:String!){
+     addPullRequestReviewThread(input:{pullRequestReviewId:$review,path:$path,line:$line,side:$side,body:$body}){ thread{ comments(first:1){ nodes{ id state outdated commit{ oid }}}}}}'
+   ```
+
+   It must come back `PENDING`, or stop and report it, as when staging. A pending review keeps the commit it was created on, and GitHub's docs don't say that a thread added to it later lands on the current head. So check the first one you add or move: its `commit` must be `headRefOid` and it must not be `outdated`. If it isn't, delete it again, add or move nothing more, and give every remaining finding as not staged, saying that GitHub put new comments on the review's old commit.
+7. Never submit the review, never post outside it, and never react to a comment or resolve a thread.
+8. panopticon notices the update and takes the new wording as drafted on its own, so unlike `rewrite` there is no `review-redrafted` command to run.
 
 Report in this shape, and nothing after it:
 
@@ -206,17 +219,19 @@ Updated the review of #<n> for <short head sha>, still pending:
 Added:
 1. MAJOR       <path>:<line>
 Removed:
-2. <path>:<line>  <one sentence saying why>
+2. <path>:<line>  <one sentence saying why: fixed, no longer holds, or who already said it>
+Rewritten:
+3. MINOR       <path>:<line>  now agrees with <name>
 Moved:
-3. MINOR       <path>:<old line> -> <new line>
-Your comments now outdated:
-4. <path>:<line>  still holds | no longer holds, <one sentence saying why>
+4. MINOR       <path>:<old line> -> <new line>
+Left alone, since you were editing it:
+5. <path>:<line>
 Not staged:
-5. MINOR       <path>:<line>  <reason>
+6. MINOR       <path>:<line>  <reason>
 
 Verdict: <verdict>. <one sentence saying why>
 
 Reply with a number to get it explained and redrafted here.
 ```
 
-Leave out each heading with nothing under it. Number the entries on from one through every heading, each heading's entries in the order the Files changed tab shows them, so a number from the user names one entry, as in the staging index. Give each not-staged finding's full comment text below the line, since it isn't on GitHub. A reply with a number gets an explanation and a redraft as in "When the user replies with a number", and a removed comment gets the reason it went.
+Leave out each heading with nothing under it. Number the entries on from one through every heading, each heading's entries in the order the Files changed tab shows them, so a number from the user names one entry, as in the staging index. Mark each removed or rewritten comment that was the user's with `(yours)` and give its full text as it was below the line, so they can put it back. Give each not-staged finding's full comment text below the line too, since it isn't on GitHub. A reply with a number gets an explanation and a redraft as in "When the user replies with a number", and a removed comment gets the reason it went.
